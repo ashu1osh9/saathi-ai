@@ -1,0 +1,13 @@
+{$SAATHI_DOMAIN} {
+	# Caddy provisions/renews HTTPS once real DNS and ports 80/443 are ready.
+	basic_auth {
+		{env.SAATHI_DEMO_USER} {env.SAATHI_DEMO_PASSWORD_HASH}
+	}
+	request_body {
+		max_size 9MB
+	}
+	reverse_proxy app:8000 {
+		header_up -Authorization
+		header_up X-Saathi-Gateway {env.SAATHI_PROXY_TOKEN}
+	}
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0c1322" />
+  <meta name="description" content="Saathi AI is a Hindi and Hinglish voice companion for reading in-app messages, understanding key details, drafting replies and remembering everyday tasks." />
+  <title>Saathi AI — Your voice. Your independence.</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<div class="shell">
+  <header class="topbar">
+    <a href="/" class="brand" aria-label="Saathi AI homepage"><span class="mark" aria-hidden="true">✳</span> saathi<span class="brand-dot">.</span><span class="brand-ai">AI</span></a>
+    <nav class="top-actions" aria-label="Accessibility and service status"><span class="chip" id="apiStatus" role="status">Checking speech configuration…</span><button class="text-btn" id="contrastBtn" type="button" aria-pressed="false">High contrast</button><button class="text-btn" id="sizeBtn" type="button" aria-pressed="false">A+ Text</button></nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" aria-labelledby="heading">
+      <div class="hero-content"><div class="eyebrow"><span class="dot" aria-hidden="true"></span> Your everyday companion · <span lang="hi">आपका साथी</span></div>
+        <h1 id="heading">Your voice.<br /><em>Your independence.</em></h1>
+        <p class="lede">Listen to messages, understand key details, draft replies, and manage reminders — in Hindi and Hinglish. Designed for people who find screens or typing difficult.</p>
+        <div class="hero-cta"><button class="primary mic-button" id="startTalk" type="button" aria-controls="transcript" aria-pressed="false" aria-describedby="recordHelp"><span aria-hidden="true">◉</span> Start speaking · बोलिए</button><span class="helper" id="recordHelp">Press once to start, again to stop · <kbd>Alt</kbd> + <kbd>M</kbd> · Up to 25 seconds</span><a class="typing-link" href="#transcript">Prefer typing? Enter a command ↓</a></div>
+      </div>
+      <div class="hero-visual" aria-hidden="true"><div class="orb"><span class="orb-ring ring-a"></span><span class="orb-ring ring-b"></span><span class="orb-core">✳</span></div><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="visual-label">VOICE IS THE INTERFACE</span></div>
+    </section>
+
+    <section class="workshop" aria-labelledby="consoleHeading">
+      <div class="section-head"><div><p class="kicker">YOUR VOICE SPACE</p><h2 id="consoleHeading">How can I help today?</h2></div><span class="pill">Hindi + Hinglish</span></div>
+      <div class="quick-actions" aria-label="Try a command"><button type="button" data-command="Mera latest message padho">Read my message <span lang="hi">सुनो</span></button><button type="button" data-command="Message ka summary batao">Get key details <span lang="hi">समझो</span></button><button type="button" data-command="Reply likho">Draft a reply <span lang="hi">लिखो</span></button><button type="button" data-command="Reminder set karo">Set a reminder <span lang="hi">याद दिलाओ</span></button></div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="console">
+        <div class="speak-panel"><label class="field-label" for="transcript">Your command / <span lang="hi">आपकी बात</span></label><textarea id="transcript" rows="3" maxlength="4000" dir="auto" spellcheck="false" translate="no" placeholder="Speak, or type here. You can edit what Saathi heard." aria-describedby="commandExamples"></textarea><div class="console-actions"><button id="runCommand" class="primary small" type="button">Run command</button><button id="speakText" class="outline small" type="button">Read command aloud</button></div><p class="hint" id="commandExamples">Try “Ravi ko message likho, main kal aaunga” or “5 minute baad paani peena yaad dilana”. Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run.</p></div>
+        <div class="reply-panel"><div class="answer-header"><span class="answer-dot" aria-hidden="true"></span> SAATHI RESPONSE</div><p id="reply" class="reply" tabindex="0" dir="auto" translate="no" aria-label="Saathi response transcript" aria-live="polite" aria-atomic="true">Namaste! नमस्ते। Read a message, draft a reply, or set a reminder. You can speak or type — I'm here to help.</p><div class="answer-footer"><button id="replay" class="text-btn" type="button">▶ Hear response</button><span id="status" role="status">Ready for your command</span></div></div>
+      </div>
+      <div class="voice-settings" aria-label="Spoken feedback settings"><label class="check-label"><input type="checkbox" id="autoSpeak" checked /> Speak responses automatically</label><label for="voiceLanguage">Speech language<select id="voiceLanguage"><option value="hi-IN">Hindi / हिन्दी</option><option value="hi-en">Hinglish</option><option value="en-IN">English</option><option value="auto">Detect from text</option></select></label><label for="voiceSpeed">Speaking speed<select id="voiceSpeed"><option value="0.85">Slower</option><option value="1" selected>Normal</option><option value="1.15">Faster</option></select></label><button id="stopSpeech" class="outline" type="button">■ Stop audio</button></div>
+      <div class="playback-panel"><p id="voiceStatus" role="status">Speech uses Gnani Prisma and Timbre. Typed commands work without a speech key.</p><audio id="playback" controls preload="none" aria-label="Saathi spoken response"></audio></div>
+      <p class="privacy-note">Microphone turns on only when you choose. Recording is sent to Gnani for transcription; spoken response text is sent for synthesis. Audio is not saved by Saathi.</p>
+    </section>
+
+    <section aria-labelledby="toolHeading" class="features"><div class="section-head"><div><p class="kicker">EVERYDAY SUPPORT</p><h2 id="toolHeading">A little help. A lot of possibility.</h2></div><span class="pill">Stored on this device’s server</span></div>
+      <div class="tiles">
+        <article class="tile" id="messagesPanel"><div class="tile-icon lavender" aria-hidden="true">▣</div><div class="tile-top"><h3>Suno <span>Read your messages</span></h3><p>Your Saathi inbox, read clearly. Add messages here to listen or get an extractive summary.</p></div><form id="addMessage" class="stack"><label for="sender">Sender name<input id="sender" maxlength="80" required placeholder="e.g. College office" autocomplete="off" /></label><label for="newMessage">Message<textarea id="newMessage" maxlength="3000" required rows="2" placeholder="Paste a message into your in-app inbox"></textarea></label><button class="secondary" type="submit">Add to Saathi inbox</button></form><div class="tile-actions"><button id="readLatest" class="outline small" type="button">▶ Read latest</button><button id="summarize" class="outline small" type="button">✦ Key details</button></div><div id="inboxList" class="listbox" role="region" aria-label="Latest 30 inbox messages" tabindex="0">Your inbox is empty.</div></article>
+        <article class="tile" id="draftsPanel"><div class="tile-icon mint" aria-hidden="true">✎</div><div class="tile-top"><h3>Meri Awaaz <span>Make your reply heard</span></h3><p>Speak or type. Listen, review and confirm your draft before saving. Drafts stay in Saathi.</p></div><form id="draftForm" class="stack"><label for="recipient">Recipient<input id="recipient" maxlength="80" required placeholder="e.g. My friend" autocomplete="off" /></label><label for="draftBody">Your reply<textarea id="draftBody" maxlength="2000" required rows="3" placeholder="Your voice-composed reply appears here"></textarea></label><div class="tile-actions"><button id="readDraft" type="button" class="outline small">▶ Check aloud</button><button class="secondary" type="submit">Review draft</button></div></form><div id="draftList" class="listbox" role="region" aria-label="Latest 15 saved drafts" tabindex="0">No drafts saved yet.</div></article>
+        <article class="tile" id="remindersPanel"><div class="tile-icon peach" aria-hidden="true">◷</div><div class="tile-top"><h3>Yaad Dilao <span>A nudge at the right time</span></h3><p>Say “kal shaam 4 baje meeting yaad dilana”. Review the time, then confirm. Keep this tab open for alerts.</p></div><form id="reminderForm" class="stack"><label for="reminderNote">Remind me about<input id="reminderNote" maxlength="500" required placeholder="e.g. Drink water" /></label><label for="reminderDate">Date & time on this device<input type="datetime-local" id="reminderDate" required aria-describedby="timezoneHint" /></label><p class="hint" id="timezoneHint"></p><button class="secondary" type="submit">Review reminder</button></form><div id="reminderList" class="listbox" role="region" aria-label="Reminders, up to 100" tabindex="0">No reminders saved yet.</div></article>
+      </div>
+    </section>
+    <section class="trust" aria-label="Accessibility principles"><div><span class="trust-icon">♧</span><h3>Access first</h3><p>Keyboard-friendly controls, visible focus, adaptable type size, and spoken feedback.</p></div><div><span class="trust-icon">◇</span><h3>Consent first</h3><p>No automatic sending. Voice recordings are sent to Gnani only after you choose to record.</p></div><div><span class="trust-icon">◎</span><h3>Honest by design</h3><p>Speech uses real Gnani API requests. Summaries use transparent extractive selection, not a pretend LLM.</p></div></section>
+  </main>
+  <footer><a class="brand footer-brand" href="#main">saathi<span class="brand-dot">.</span></a><span>More access. More agency. Every day.<br />Built for the Gnani AI Internship Challenge 2026.</span><a href="#consoleHeading">Back to your voice space ↑</a></footer>
+</div>
+<dialog id="confirmDialog" aria-labelledby="confirmHeading" aria-describedby="confirmPreview confirmHint">
+  <p class="kicker">YOU’RE IN CONTROL · आपकी मर्ज़ी</p><h2 id="confirmHeading">Review before saving</h2>
+  <p id="confirmPreview" class="confirm-preview"></p><p id="confirmHint">Say “haan” to confirm or “nahi” to cancel, or use the buttons. This review expires in 5 minutes.</p>
+  <p id="confirmStatus" role="status"></p><p id="confirmError" role="alert" hidden></p>
+  <div class="dialog-actions"><button id="cancelAction" class="outline" type="button" autofocus>Cancel / नहीं</button><button id="confirmAction" class="primary" type="button">Confirm / हाँ</button></div>
+  <div class="dialog-actions"><button id="confirmVoice" class="outline" type="button" aria-pressed="false">◉ Speak confirmation</button><button id="readReview" class="text-btn" type="button">Hear review</button><button id="dialogStop" class="text-btn" type="button">Stop audio</button></div>
+</dialog>
+<script src="/static/audio.js" defer></script>
+<script src="/static/app.js" defer></script>
+</body>
+</html>

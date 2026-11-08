@@ -1,0 +1,56 @@
+name: saathi-ai
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    environment:
+      SAATHI_ENV: production
+      SAATHI_DB_PATH: /data/saathi.db
+      SAATHI_ALLOWED_HOSTS: ${SAATHI_DOMAIN:?Set SAATHI_DOMAIN to your real domain}
+      SAATHI_PROXY_TOKEN: ${SAATHI_PROXY_TOKEN:?Set a strong private gateway token}
+      GNANI_API_KEY: ${GNANI_API_KEY:?Set the server Gnani API key}
+      GNANI_STT_MODEL: ${GNANI_STT_MODEL:-prisma-v3.0}
+      GNANI_TTS_MODEL: ${GNANI_TTS_MODEL:-timbre-v2.5}
+      GNANI_TTS_VOICE: ${GNANI_TTS_VOICE:-Nalini}
+    volumes:
+      - saathi_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - backend
+    # Intentionally no host port: only the authenticated gateway is public.
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      SAATHI_DOMAIN: ${SAATHI_DOMAIN:?Set SAATHI_DOMAIN}
+      SAATHI_DEMO_USER: ${SAATHI_DEMO_USER:?Set the private demo username}
+      SAATHI_DEMO_PASSWORD_HASH: ${SAATHI_DEMO_PASSWORD_HASH:?Set a bcrypt password hash}
+      SAATHI_PROXY_TOKEN: ${SAATHI_PROXY_TOKEN:?Set the private gateway token}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+networks:
+  backend:
+volumes:
+  saathi_data:
+  caddy_data:
+  caddy_config:

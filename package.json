@@ -1,0 +1,9 @@
+{
+  "name": "saathi-ai-checks",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/frontend.test.cjs",
+    "check": "node --check static/app.js && node --check static/audio.js"
+  },
+  "engines": {"node": ">=20"}
+}

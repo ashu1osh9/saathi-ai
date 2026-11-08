@@ -1,0 +1,9 @@
+# Allowlist: secrets, databases, tests, screenshots and local runtimes never enter build context.
+**
+!Dockerfile
+!requirements.lock
+!app.py
+!gnani.py
+!logic.py
+!static/
+!static/**
