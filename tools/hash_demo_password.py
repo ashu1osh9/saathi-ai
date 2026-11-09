@@ -3,8 +3,8 @@ import getpass
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from demo_security import password_hash
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+from saathi.demo_security import password_hash
 
 
 if __name__ == '__main__':

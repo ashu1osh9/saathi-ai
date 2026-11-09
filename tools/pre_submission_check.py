@@ -21,11 +21,11 @@ ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = {'.env.example', '.env.production.example'}
 PRIVATE_DIRS = {'.git', '.venv', '.python', '.browser-test', 'test-results', 'node_modules',
                 'data', 'backups', 'private', 'recordings', 'uploads', 'logs', '.cache', '.docker',
-                '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache', 'dist'}
+                '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache', 'dist', 'build'}
 PRIVATE_SUFFIXES = {'.db', '.sqlite', '.sqlite3', '.wav', '.webm', '.mp3', '.mp4', '.mov',
                     '.m4a', '.ogg', '.flac', '.aac', '.avi', '.mkv',
                     '.pem', '.key', '.log', '.pyc', '.pyo'}
-TEXT_SUFFIXES = {'.py', '.js', '.css', '.html', '.md', '.txt', '.lock', '.yaml', '.yml', '.json', '.bat'}
+TEXT_SUFFIXES = {'.py', '.js', '.css', '.html', '.md', '.txt', '.lock', '.yaml', '.yml', '.json', '.bat', '.toml'}
 
 
 def git(*args, check=True):
@@ -40,7 +40,7 @@ def private_path(name):
         return True
     if name in EXAMPLES:
         return False
-    return (bool(set(path.parts) & PRIVATE_DIRS) or path.suffix.casefold() in PRIVATE_SUFFIXES
+    return (bool(set(path.parts) & PRIVATE_DIRS) or any(part.endswith('.egg-info') for part in path.parts) or path.suffix.casefold() in PRIVATE_SUFFIXES
             or path.name == '.env' or path.name.startswith('.env.')
             or path.name.endswith(('.db-wal', '.db-shm', '.db-journal')))
 

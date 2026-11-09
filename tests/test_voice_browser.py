@@ -28,7 +28,7 @@ class TestRealVoiceChrome(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from playwright.sync_api import sync_playwright
-        import gnani
+        from saathi import gnani
         load_dotenv(ROOT / '.env')
         if not gnani.configuration()['key']:
             raise RuntimeError('GNANI_API_KEY is required in the server .env')
@@ -52,7 +52,7 @@ class TestRealVoiceChrome(unittest.TestCase):
         cls.log = (Path(cls.temp.name) / 'server.log').open('w', encoding='utf-8')
         env = {**os.environ, 'SAATHI_DB_PATH': str(Path(cls.temp.name) / 'voice.db')}
         cls.server = subprocess.Popen(
-            [sys.executable, '-B', '-m', 'uvicorn', 'app:app', '--host', '127.0.0.1', '--port', str(port)],
+            [sys.executable, '-B', '-m', 'uvicorn', 'saathi.app:app', '--host', '127.0.0.1', '--port', str(port)],
             cwd=ROOT, env=env, stdout=cls.log, stderr=cls.log,
             creationflags=0x08000000 if os.name == 'nt' else 0,
         )

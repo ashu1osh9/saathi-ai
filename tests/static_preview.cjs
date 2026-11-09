@@ -5,10 +5,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const files = new Map([
-  ['/', ['static/index.html', 'text/html; charset=utf-8']],
-  ['/static/app.js', ['static/app.js', 'text/javascript; charset=utf-8']],
-  ['/static/audio.js', ['static/audio.js', 'text/javascript; charset=utf-8']],
-  ['/static/styles.css', ['static/styles.css', 'text/css; charset=utf-8']],
+  ['/', ['src/saathi/static/index.html', 'text/html; charset=utf-8']],
+  ['/static/app.js', ['src/saathi/static/app.js', 'text/javascript; charset=utf-8']],
+  ['/static/audio.js', ['src/saathi/static/audio.js', 'text/javascript; charset=utf-8']],
+  ['/static/styles.css', ['src/saathi/static/styles.css', 'text/css; charset=utf-8']],
 ]);
 http.createServer((request, response) => {
   if (request.url.startsWith('/api/')) {

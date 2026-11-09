@@ -30,7 +30,7 @@ class TestBrowserFlows(unittest.TestCase):
         cls.base = f'http://127.0.0.1:{port}'
         env = {**os.environ, 'SAATHI_DB_PATH': str(Path(cls.temp.name) / 'browser.db'), 'GNANI_API_KEY': ''}
         cls.log = open(Path(cls.temp.name) / 'server.log', 'w')
-        cls.server = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'app:app', '--host', '127.0.0.1', '--port', str(port)], cwd=ROOT, env=env, stdout=cls.log, stderr=cls.log, creationflags=0x08000000 if os.name == 'nt' else 0)
+        cls.server = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'saathi.app:app', '--host', '127.0.0.1', '--port', str(port)], cwd=ROOT, env=env, stdout=cls.log, stderr=cls.log, creationflags=0x08000000 if os.name == 'nt' else 0)
         try:
             deadline = time.monotonic() + 30
             while time.monotonic() < deadline:

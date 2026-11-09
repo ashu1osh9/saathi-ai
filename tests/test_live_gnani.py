@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / '.env')
-import gnani
+from saathi import gnani
 
 
 @unittest.skipUnless(os.getenv('SAATHI_LIVE_TEST') == '1', 'Set SAATHI_LIVE_TEST=1 and SAATHI_TEST_WAV to opt in to real billed API calls')

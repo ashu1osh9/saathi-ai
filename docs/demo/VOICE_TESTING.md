@@ -8,7 +8,7 @@ The server was restarted with the configured key and WAV fix at **http://127.0.0
 
 ```powershell
 Set-Location -LiteralPath 'D:\Gennai\saathi-ai'
-& .\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000
+& .\.venv\Scripts\python.exe -m uvicorn saathi.app:app --host 127.0.0.1 --port 8000
 ```
 
 In another PowerShell window:

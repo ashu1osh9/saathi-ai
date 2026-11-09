@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import requests
 from fastapi import HTTPException
 
-import gnani
+from saathi import gnani
 
 
 def wav(rate=16000, channels=1, seconds=0.1):
@@ -25,7 +25,7 @@ class TestGnaniContract(unittest.TestCase):
     def setUp(self):
         self.env = patch.dict('os.environ', {'GNANI_API_KEY': 'test-key', 'GNANI_STT_MODEL': 'prisma-v3.0', 'GNANI_TTS_MODEL': 'timbre-v2.5', 'GNANI_TTS_VOICE': 'Nalini'})
         self.env.start()
-        self.post = patch('gnani.requests.post')
+        self.post = patch('saathi.gnani.requests.post')
         self.request = self.post.start()
 
     def tearDown(self):

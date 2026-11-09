@@ -44,3 +44,5 @@ node_modules/
 .coverage
 htmlcov/
 dist/
+build/
+*.egg-info/

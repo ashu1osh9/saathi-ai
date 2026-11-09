@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 import requests
-from demo_security import password_hash
+from saathi.demo_security import password_hash
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,7 +40,7 @@ class TestRailwayHTTP(unittest.TestCase):
 
     @classmethod
     def start_server(cls):
-        cls.server = subprocess.Popen([sys.executable, '-B', 'serve.py'], cwd=ROOT, env=cls.env,
+        cls.server = subprocess.Popen([sys.executable, '-B', '-m', 'saathi.serve'], cwd=ROOT, env=cls.env,
                                       stdout=cls.log, stderr=cls.log,
                                       creationflags=0x08000000 if os.name == 'nt' else 0)
         deadline = time.monotonic() + 30

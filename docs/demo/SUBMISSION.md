@@ -34,7 +34,7 @@ The integration uses the official REST endpoints with authenticated requests, ti
 
 ## Verification and real-world impact
 
-The owner reports that core features and real Gnani voice interactions have passed manual testing. Automated evidence covers real Prisma/Timbre calls, Chrome recording through a virtual microphone fed genuine generated speech, intent routing, actual database actions, confirmation, playback and a due-reminder announcement. The final exact test counts and remaining limitations are recorded in `AUDIT.md`; they are engineering verification, not user-study or impact metrics.
+The owner reports that core features and real Gnani voice interactions have passed manual testing. Automated evidence covers real Prisma/Timbre calls, Chrome recording through a virtual microphone fed genuine generated speech, intent routing, actual database actions, confirmation, playback and a due-reminder announcement. The final exact test counts and remaining limitations are recorded in `../reports/AUDIT.md`; they are engineering verification, not user-study or impact metrics.
 
 The intended benefit is less dependence on precise typing/pointing for these everyday in-app tasks, with language choice and explicit user control. No adoption numbers, time savings, recognition accuracy, WER, satisfaction scores, testimonials or measured accessibility outcomes have been collected or claimed. Evaluation with intended users remains a next step.
 
@@ -61,9 +61,9 @@ No contributor identities were supplied in the request. Complete this table with
 ## Submission checklist
 
 - [ ] Confirm contributor names and contribution descriptions.
-- [ ] Review `README.md`, sanitized screenshots and `AUDIT.md`.
+- [ ] Review `README.md`, sanitized screenshots and `../reports/AUDIT.md`.
 - [ ] Record the real demo using `DEMO_SCRIPT.md`; add its final link if required.
-- [ ] Decide whether an authorized private HTTPS deployment is needed and complete `DEPLOYMENT.md` acceptance checks if so.
+- [ ] Decide whether an authorized private HTTPS deployment is needed and complete `../deployment/DEPLOYMENT.md` acceptance checks if so.
 - [ ] Authorize and perform the GitHub push/publication; review tracked files for secrets and private data first.
 - [ ] Review the organizer's current submission form/rules and submit by the owner's target date.
 

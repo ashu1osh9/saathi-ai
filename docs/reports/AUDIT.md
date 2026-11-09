@@ -1,6 +1,51 @@
-﻿# Inspection and verification record
+# Inspection and verification record
 
 Latest update: 9 November 2026. This record distinguishes source review, executed checks and checks awaiting a working runtime/account. Earlier dated results are historical; the latest section supersedes their current-status claims.
+
+## Professional structure refactor — latest local verification
+
+Work is isolated on `refactor/professional-structure`, based on `b1b5e29`. The
+implementation was moved with `git mv`, not rebuilt. Five modules/four assets are
+under `src/saathi`; competition, deployment and historical reports are organized
+under `docs`. Infrastructure remains at the repository root.
+
+- **VERIFIED:** package imports, patch targets, HTTP/browser subprocess entrypoints,
+  Windows launcher, frontend filesystem references, CI wheel building, Docker
+  installation, standalone tools and documentation links now use the package layout.
+- **VERIFIED:** editable/source installs retain checkout-root `.env` and `saathi.db`
+  discovery from unrelated CWDs; normal wheels use CWD for local configuration/data
+  and serve packaged static assets. Deployed `/data/saathi.db`, authentication modes,
+  HTTPS/host/same-origin checks, quotas, non-root startup and one worker are retained.
+- **VERIFIED:** exact baseline OpenAPI equality; byte-identical Gnani adapter, intent
+  logic, demo-security module and four frontend assets; no existing test assertions
+  removed. No fake production API responses or UI redesign were introduced.
+- **VERIFIED:** Windows Python **79 passed, 6 skipped, 0 failures/errors** (85 total,
+  **32.825s**); Ubuntu **79 passed, 6 skipped, 0 failures/errors** (85 total,
+  **73.982s**). Both include all three Playwright tests and production/security tests.
+  Frontend **22/22 passed**, syntax/dependency checks passed: **101 unique passes**.
+- **VERIFIED:** distributable wheel build, static/secret inspection, and actual
+  installed-wheel execution from another directory with disposable configuration
+  and a real database action. Runtime lockfile versions remain unchanged.
+- **VERIFIED:** refactored Docker image built and passed real Railway-mode smoke
+  acceptance from Windows and Ubuntu. A separate read-only Compose-style backend
+  container passed gateway authorization, default port 8000, UID 10001 and restart
+  persistence. No public Caddy listener or hosted deployment was started.
+- **VERIFIED:** Railway current schema, workflow YAML and Compose syntax; 33 local
+  documentation/image links; private `.env`/database fingerprints unchanged; the
+  `main` ref remains `b1b5e29`. Build/egg metadata are ignored and rejected as private
+  development artifacts by the release checker.
+- **VERIFIED RELEASE:** **55 reviewed source files** are staged on the refactor
+  branch and match the rebuilt ZIP. Archive integrity, known-secret/common-pattern
+  scanning and private-artifact exclusion checks pass with **zero findings**. Git
+  recognizes all **16 moved files** as renames. Changes remain uncommitted.
+- **NOT TESTED:** six existing opt-in billed provider tests, physical audio hardware,
+  human screen-reader acceptance and hosted Railway TLS/voice/backup/restore. No
+  additional tests were skipped or disabled; no new paid-provider success is claimed.
+
+See [STRUCTURE_REFACTOR.md](STRUCTURE_REFACTOR.md) for the final tree, move map and
+exact branch-safe review/test commands. No commit, push, merge or deployment is
+performed by this structural task. Older command references describe earlier
+layouts/results; use the current README/refactor guide for execution.
 
 ## Docker smoke-test CI failure — 9 November 2026 (latest)
 
@@ -31,7 +76,7 @@ Base commit: `493627f`; the owner reports GitHub Actions green. This section cov
 | **VERIFIED** | Frontend **22/22** passed; JavaScript syntax and dependency compatibility passed. **97 unique passing tests** across Python + frontend; six paid tests excluded. Python source compilation, Railway's current official JSON schema, workflow YAML and `docker compose config --quiet` passed. Configuration validation used nonsecret values; temporary validator packages are ignored and are not runtime dependencies. |
 | **BLOCKED / NOT EXECUTED** | The local Docker daemon is unavailable. Revised image build and real container startup/volume checks were not executed here. Added a CI-only disposable Docker runtime probe after the build: root-owned named volume, actual PID-1 UID 10001, PORT/auth/proxy checks, confirmations and restart persistence. It uses no real key/provider call, publishes no image, and awaits the next owner-triggered CI run. |
 | **NOT TESTED / OWNER ACTION** | Six opt-in billed tests (one Gnani roundtrip plus five voice-browser tests) were not rerun because spending was prohibited. Real Railway certificate/edge routing, mounted volume behavior, production account connectivity, hosted microphone/playback, persistence/backup restore and human screen-reader acceptance require an authorized deployment. Previous live-service evidence is retained below, not presented as a new paid run. |
-| **PREPARED** | `RAILWAY_DEPLOYMENT.md` lists exact variables, hidden-prompt hash generation, root-to-non-root storage startup, one replica/worker, dashboard setup, post-deploy acceptance, limits, backup guidance and review/push commands. `railway.json` requires the Dockerfile and `/data` mount, sets one replica and `/api/health`, and leaves the Dockerfile startup intact. No actual hostname, evaluator credentials or hosted URL was invented. |
+| **PREPARED** | `../deployment/RAILWAY_DEPLOYMENT.md` lists exact variables, hidden-prompt hash generation, root-to-non-root storage startup, one replica/worker, dashboard setup, post-deploy acceptance, limits, backup guidance and review/push commands. `railway.json` requires the Dockerfile and `/data` mount, sets one replica and `/api/health`, and leaves the Dockerfile startup intact. No actual hostname, evaluator credentials or hosted URL was invented. |
 
 The source is ready for owner review. Keep Railway autodeploy disabled/disconnected before pushing these preparation changes; then require a fresh green CI run before separately authorizing deployment. Real keys/hashes belong only in private Railway service variables. The prior source ZIP becomes stale after edits: stage the reviewed allowlist and rerun the release checker with `--rebuild-zip` before sharing an updated archive.
 
@@ -87,9 +132,9 @@ Target submission date: **November 10, 2026**, supplied by the owner. No organiz
 | **VERIFIED** | Compose configuration parsed with `config --quiet` and validation-only values. Official Caddy 2.11.8 accepted the HTTPS/auth proxy configuration. All **19 pinned Linux/Python 3.12 runtime wheels** were downloaded successfully for availability checking. |
 | **BLOCKED** | Docker image build/runtime checks: Docker daemon is not running in this environment. Build-only CI configuration is prepared but has not run. No remote host/domain, TLS issuance, deployed authentication or remote-volume restart/restore check is claimed. |
 | **NOT TESTED** | Human NVDA/other screen-reader review, a formal accessibility audit, representative intended-user usability, background/closed-tab notification reliability, production load/abuse resistance and hosted uptime. No metrics or testimonials are fabricated. |
-| **OWNER INPUT REQUIRED** | Contributor names/actual contribution attribution remain explicitly marked for completion in `SUBMISSION.md`. Final video recording and any authorized GitHub/hosting publication are not completed. |
+| **OWNER INPUT REQUIRED** | Contributor names/actual contribution attribution remain explicitly marked for completion in `../demo/SUBMISSION.md`. Final video recording and any authorized GitHub/hosting publication are not completed. |
 
-Submission materials: `README.md`, sanitized `docs/screenshots/`, `DEMO_SCRIPT.md`, `SUBMISSION.md`, `DEPLOYMENT.md` and `VOICE_TESTING.md`. The prepared production route is a restricted, authenticated **single-user evaluator demo**, not an unrestricted multi-user service. Production still needs an owned domain/host, private environment values, password hash, gateway token, Docker/runtime acceptance and explicit deployment authorization.
+Submission materials: `README.md`, sanitized `docs/screenshots/`, `../demo/DEMO_SCRIPT.md`, `../demo/SUBMISSION.md`, `../deployment/DEPLOYMENT.md` and `../demo/VOICE_TESTING.md`. The prepared production route is a restricted, authenticated **single-user evaluator demo**, not an unrestricted multi-user service. Production still needs an owned domain/host, private environment values, password hash, gateway token, Docker/runtime acceptance and explicit deployment authorization.
 
 The source workspace currently has no Git repository/history. Ignore rules have been exercised in a disposable repository, but actual future tracked files/history still need review before publication. No existing personal database, key, recording, local environment or test log should be included in the source release.
 
@@ -112,14 +157,14 @@ This section supersedes the earlier credential/browser blockers below. The exist
 | **VERIFIED** | Chrome keyboard, labels, contrast, layout | Two Chrome tests passed after the fix, covering skip link, Ctrl+Enter, cancel-first focus and modal wrapping, unique accessible field labels, audio label, persisted high contrast and 20-pixel root text, and no horizontal overflow at 320 / 390 / 768 / 1440 pixels. Desktop/mobile screenshots were inspected. |
 | **VERIFIED** | Focused regressions | 11 provider-adapter tests and 22 frontend tests passed, plus JavaScript syntax checks. Existing backend/HTTP results below are retained rather than re-audited. |
 | **BLOCKED → RESOLVED** | Sandbox outbound access and Playwright | First sandbox TTS attempt could not reach Gnani. With allowed network execution, real service calls worked and Playwright was installed in the project environment. No credential or Playwright blocker remains for this setup. |
-| **NOT TESTED** | Physical microphone, acoustic conditions, speakers, subjective voice quality | Virtual audio capture and decoded Chrome playback do not prove device permission behavior on your normal browser profile, room/noise performance, actual speaker audibility or natural pronunciation. Use [VOICE_TESTING.md](VOICE_TESTING.md). |
+| **NOT TESTED** | Physical microphone, acoustic conditions, speakers, subjective voice quality | Virtual audio capture and decoded Chrome playback do not prove device permission behavior on your normal browser profile, room/noise performance, actual speaker audibility or natural pronunciation. Use [VOICE_TESTING.md](../demo/VOICE_TESTING.md). |
 | **NOT TESTED** | Human screen-reader acceptance and background-tab reminders | Labels/focus and an actual active-tab due alert were checked in Chrome, but NVDA/other screen-reader operation, physical audibility and background-tab reminder scheduling still need manual review. |
 
 Reproducible evidence: `test-results/live-voice/chrome-voice-evidence*.json` (separate reports preserve each run), genuine generated WAVs in that directory, `chrome-real-read.png`, and desktop/mobile screenshots in `test-results/`. These are local ignored artifacts, not production fixtures. Automated voice tests are opt-in via `SAATHI_VOICE_E2E=1` and incur real API usage.
 
 The existing localhost server was restarted with the configured key and corrected audio handling. Use `http://127.0.0.1:8000`. Its real `/api/tts` route was checked again: HTTP 200, valid Hindi WAV, duration 2.08 seconds. Health's `connection_verified=false` is intentionally a configuration-only response; that route itself does not make a real provider call.
 
-Exact automated and manual next steps are in [VOICE_TESTING.md](VOICE_TESTING.md). No **unresolved** reproducible API/playback or keyboard failure remained in the checks above, and no missing-credential blocker remains. Physical-device, screen-reader and background-tab scheduling checks are explicitly not claimed as passed.
+Exact automated and manual next steps are in [VOICE_TESTING.md](../demo/VOICE_TESTING.md). No **unresolved** reproducible API/playback or keyboard failure remained in the checks above, and no missing-credential blocker remains. Physical-device, screen-reader and background-tab scheduling checks are explicitly not claimed as passed.
 
 ## Previous inspection and verification pass (historical)
 
@@ -157,7 +202,7 @@ The existing architecture and stored-data schema were retained: FastAPI, SQLite,
 - The 42 passing tests comprise **16 API/database tests, 14 Hindi/Hinglish logic tests, 9 Gnani transport-contract/error tests and 3 real HTTP acceptance tests**.
 - The HTTP tests start an actual Uvicorn process with a disposable SQLite database, exercise messages, extractive summaries, draft cancellation/confirmation, reminder creation/completion and one-use token replay protection, then stop the process. They also verify static assets/security headers and real 503 responses for missing speech credentials. No HTTP/provider success is fabricated in these acceptance tests.
 - **21 frontend regression checks passed** with Node 22.17 using `node --test tests/frontend.test.cjs`. These execute production UI functions against a test-only DOM and HTTP fixtures; they do not establish browser rendering or microphone behavior.
-- `node --check static/app.js`, `node --check static/audio.js` and `node --check tests/static_preview.cjs` passed.
+- `node --check src/saathi/static/app.js`, `node --check src/saathi/static/audio.js` and `node --check tests/static_preview.cjs` passed.
 - **`pip check` passed**, and `pip install --no-index -r requirements.txt` confirmed that all application requirements are satisfied in the prepared local environment.
 - The real app was started on **http://127.0.0.1:8000**. Its health endpoint returned HTTP 200 with `status=ok`, `gnani_configured=false` and `connection_verified=false`. App data was not populated with automated demo fixtures; acceptance tests used a separate disposable database.
 - README PowerShell command blocks were parsed with PowerShell's parser; setup/test file references exist.

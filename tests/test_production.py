@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-import app as server
+from saathi import app as server
 
 
 class TestProductionGateway(unittest.TestCase):
@@ -77,10 +77,10 @@ class TestReleaseExclusions(unittest.TestCase):
             directory = Path(temporary)
             subprocess.run(['git', 'init', '--quiet', str(directory)], check=True, capture_output=True)
             shutil.copy2(root / '.gitignore', directory / '.gitignore')
-            private = ['.env', '.env.production', '.venv/Lib/private.py', '.python/python.exe', 'saathi.db', 'personal.sqlite3', 'data/inbox.json', 'backups/private.db', 'recordings/command.wav', 'test-results/live-voice/audio.wav', 'logs/server.log', '.cache/data', 'private/messages.json', 'uploads/audio.webm']
+            private = ['.env', '.env.production', '.venv/Lib/private.py', '.python/python.exe', 'saathi.db', 'personal.sqlite3', 'data/inbox.json', 'backups/private.db', 'recordings/command.wav', 'test-results/live-voice/audio.wav', 'logs/server.log', '.cache/data', 'private/messages.json', 'uploads/audio.webm', 'build/lib/saathi/app.py', 'src/saathi_ai.egg-info/PKG-INFO', 'dist/package.whl']
             result = subprocess.run(['git', '-C', str(directory), 'check-ignore', '--no-index', '-z', '--stdin'], input=('\0'.join(private) + '\0').encode(), capture_output=True)
             self.assertEqual(set(result.stdout.decode().rstrip('\0').split('\0')), set(private))
-            public = ['.env.example', '.env.production.example', 'README.md', 'Dockerfile', 'docs/screenshots/desktop.png']
+            public = ['.env.example', '.env.production.example', 'README.md', 'Dockerfile', 'docs/screenshots/desktop.png', 'pyproject.toml', 'src/saathi/app.py', 'src/saathi/static/index.html']
             result = subprocess.run(['git', '-C', str(directory), 'check-ignore', '--no-index', '-z', '--stdin'], input=('\0'.join(public) + '\0').encode(), capture_output=True)
             self.assertEqual(result.stdout, b'')
 
@@ -90,6 +90,8 @@ class TestReleaseExclusions(unittest.TestCase):
         self.assertNotIn('COPY . ', dockerfile)
         self.assertIn('USER 10001:10001', dockerfile)
         self.assertIn('!requirements.lock', (root / '.dockerignore').read_text())
+        self.assertIn('COPY src/ ./src/', dockerfile)
+        self.assertIn('"saathi.serve"', dockerfile)
         self.assertNotIn('env_file:', (root / 'compose.yaml').read_text())
 
 

@@ -3,10 +3,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const audio = require('../static/audio.js');
+const audio = require('../src/saathi/static/audio.js');
 
 function harness(options = {}) {
-  const html = fs.readFileSync('static/index.html', 'utf8');
+  const html = fs.readFileSync(require('node:path').join(__dirname, '../src/saathi/static/index.html'), 'utf8');
   const elements = new Map();
   let document;
   class Element {
@@ -69,7 +69,7 @@ function harness(options = {}) {
     console, setInterval() {}, setTimeout, clearTimeout, URL: {createObjectURL: () => 'blob:test', revokeObjectURL() {}},
     AbortSignal, AbortController, Blob, FormData, Date, Intl, ArrayBuffer, DataView,
   });
-  vm.runInContext(fs.readFileSync('static/app.js', 'utf8'), context);
+  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../src/saathi/static/app.js'), 'utf8'), context);
   return {context, calls, saved, elements, run: code => vm.runInContext(code, context), settle: () => new Promise(resolve => setImmediate(resolve))};
 }
 

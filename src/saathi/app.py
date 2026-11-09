@@ -19,12 +19,16 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 
-from logic import contains, decide_command, digest_message, normalize, parse_draft, parse_reminder
-from demo_security import BodySizeLimit, LIMITS, RequestLimits, production_environment, valid_password_hash, verify_basic
+from .logic import contains, decide_command, digest_message, normalize, parse_draft, parse_reminder
+from .demo_security import BodySizeLimit, LIMITS, RequestLimits, production_environment, valid_password_hash, verify_basic
 
-ROOT = Path(__file__).resolve().parent
+PACKAGE_ROOT = Path(__file__).resolve().parent
+_checkout = PACKAGE_ROOT.parents[1]
+# Editable/source installs retain the existing checkout-root credentials and DB.
+# Wheels use the working directory, never writable state inside site-packages.
+ROOT = _checkout if (_checkout / 'pyproject.toml').is_file() and PACKAGE_ROOT.parent == _checkout / 'src' else Path.cwd()
 load_dotenv(ROOT / '.env')
-import gnani
+from . import gnani
 
 DB = Path(os.getenv('SAATHI_DB_PATH', str(ROOT / 'saathi.db')))
 
@@ -96,7 +100,7 @@ def validate_production_config():
 app = FastAPI(title='Saathi AI', version='0.3.0', lifespan=lifespan,
               docs_url=None if production_mode() else '/docs',
               redoc_url=None if production_mode() else '/redoc')
-app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
+app.mount('/static', StaticFiles(directory=PACKAGE_ROOT / 'static'), name='static')
 app.add_middleware(BodySizeLimit)
 
 
@@ -232,7 +236,7 @@ def review(kind: str, payload: dict):
 
 @app.get('/')
 def index():
-    return FileResponse(ROOT / 'static' / 'index.html')
+    return FileResponse(PACKAGE_ROOT / 'static' / 'index.html')
 
 
 @app.get('/api/health')

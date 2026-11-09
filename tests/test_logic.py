@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime, timezone
-from logic import decide_command, digest_message, extract_draft, parse_draft, parse_reminder
+from saathi.logic import decide_command, digest_message, extract_draft, parse_draft, parse_reminder
 
 class TestCommands(unittest.TestCase):
     def test_read(self):

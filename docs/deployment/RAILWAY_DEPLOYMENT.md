@@ -11,7 +11,7 @@ Chrome → Railway HTTPS edge → FastAPI application password gate → SQLite /
 
 This is one shared evaluator inbox, not isolated user accounts. Use example data and give the login only to trusted evaluators. Basic authentication uses the browser's native login dialog over HTTPS; no password, Gnani key or gateway token is embedded in frontend files. The server stores only a salted scrypt password hash in Railway variables. Browsers cache the login; close the private browsing window to end the demo session, and rotate the hash to revoke old passwords.
 
-Local `uvicorn app:app` remains unchanged. Compose explicitly keeps `SAATHI_AUTH_MODE=gateway` and Caddy authentication. Railway uses `SAATHI_AUTH_MODE=basic`, with no Caddy service and no `X-Saathi-Gateway` header requirement. Authentication cannot be disabled in production.
+Local `uvicorn saathi.app:app` remains unchanged. Compose explicitly keeps `SAATHI_AUTH_MODE=gateway` and Caddy authentication. Railway uses `SAATHI_AUTH_MODE=basic`, with no Caddy service and no `X-Saathi-Gateway` header requirement. Authentication cannot be disabled in production.
 
 ## Generate your private login hash locally
 
@@ -59,7 +59,7 @@ Creating services/volumes and deploying can incur charges. Review your Railway p
 3. In service Settings → Networking → Public Networking, generate a Railway domain with target port **8080**. Record the actual hostname. If the dashboard requires an initial build before generating a domain, temporarily use the exact reserved hostname `pending.invalid` in the host allowlist, keep authentication enabled, and let the HTTP health probe succeed. Then generate the domain and replace `pending.invalid` with the actual hostname before evaluator access. Never use `*` to bootstrap hosting.
 4. Add the variables above, using that exact hostname. Paste the real Gnani key and generated hash privately; seal sensitive variables if your dashboard offers it. No real secret is needed at build time.
 5. Connect **`ashu1osh9/saathi-ai`**, branch `main`, repository root `/`. Use the reviewed deployment commit, after its Actions checks pass. Connecting a GitHub source may itself stage or trigger deployment; keep autodeploy disabled and review staged changes before applying them.
-6. Confirm the Dockerfile builder and `/railway.json` config. Leave custom Build, Start and Pre-deploy commands **empty**. The Dockerfile runs `python serve.py`; overriding it can skip privilege handling. `railway.json` specifies the Dockerfile, one replica, required `/data` mount, disabled sleeping, `/api/health`, a 120-second startup check and at most three failure restarts.
+6. Confirm the Dockerfile builder and `/railway.json` config. Leave custom Build, Start and Pre-deploy commands **empty**. The Dockerfile runs `python -m saathi.serve`; overriding it can skip privilege handling. `railway.json` specifies the Dockerfile, one replica, required `/data` mount, disabled sleeping, `/api/health`, a 120-second startup check and at most three failure restarts.
 7. Review all staged changes. **Only when you authorize deployment**, deploy the reviewed commit. Inspect startup/build logs privately. No secret values should be printed. The app must fail closed on missing login/key/volume, invalid hosts or root execution.
 8. Use the generated **HTTPS** URL. Railway provisions TLS; do not expose a TCP proxy or add direct backend access. `FORWARDED_ALLOW_IPS=*` is appropriate only while all public ingress passes through Railway's edge. Raw forwarded headers are not accepted by the application itself; Uvicorn processes them from the configured proxy boundary. Hosts remain checked against the actual Host header, not a browser-supplied forwarded-host value. See [Railway networking](https://docs.railway.com/networking/public-networking) and its [documented headers](https://docs.railway.com/networking/public-networking/specs-and-limits).
 
@@ -99,22 +99,11 @@ If the shell defaults to root because of `RAILWAY_RUN_UID`, use Railway's volume
 
 ## Verification status and release commands
 
-Exact local outcomes are recorded in `AUDIT.md`. The Dockerfile build and corrected disposable container acceptance now pass locally, including the exact CI smoke command from Ubuntu. The harness refreshes Docker's ephemeral host port after restart; all authentication and persistence assertions remain. The reviewed fix still needs a fresh green GitHub Actions run after the owner pushes it. Railway TLS, real mounted-volume behavior, edge routing, hosted microphone permissions and hosted Gnani account connectivity remain unverified until an authorized deployment.
+Exact local outcomes are recorded in `../reports/AUDIT.md`. The Dockerfile build and corrected disposable container acceptance now pass locally, including the exact CI smoke command from Ubuntu. The harness refreshes Docker's ephemeral host port after restart; all authentication and persistence assertions remain. The reviewed fix still needs a fresh green GitHub Actions run after the owner pushes it. Railway TLS, real mounted-volume behavior, edge routing, hosted microphone permissions and hosted Gnani account connectivity remain unverified until an authorized deployment.
 
-Before pushing, ensure Railway autodeploy is disconnected/disabled; a Git push must not silently become a deployment. Review and execute in PowerShell:
-
-```powershell
-Set-Location -LiteralPath 'D:\Gennai\saathi-ai'
-git diff --check
-if ($LASTEXITCODE -ne 0) { throw 'Diff check failed.' }
-git add -- .dockerignore .github/workflows/tests.yml Dockerfile app.py compose.yaml demo_security.py serve.py railway.json RAILWAY_DEPLOYMENT.md DEPLOYMENT.md README.md AUDIT.md tests/test_railway.py tests/test_railway_http.py tests/test_container_smoke.py tools/hash_demo_password.py tools/container_smoke.py
-if ($LASTEXITCODE -ne 0) { throw 'Staging failed.' }
-& .\.venv\Scripts\python.exe -B .\tools\pre_submission_check.py --require-git --rebuild-zip
-if ($LASTEXITCODE -ne 0) { throw 'Release check failed.' }
-git diff --cached --stat
-git commit -m "Prepare secure Railway deployment with persistent SQLite"
-if ($LASTEXITCODE -ne 0) { throw 'Commit failed.' }
-git push origin main
-```
-
-Wait for green unit/browser/container checks on that new commit before authorizing the separate Railway deployment. No push/deployment command above was executed by the assistant.
+Before publishing source, keep Railway autodeploy disconnected/disabled. Use the
+branch-safe review, test and release-check commands in
+[STRUCTURE_REFACTOR.md](../reports/STRUCTURE_REFACTOR.md). The structural branch is
+`refactor/professional-structure`; it must not modify/push main or trigger deployment.
+After separate owner review/merge and a green run on the approved deployment commit,
+the owner may authorize Railway deployment using the dashboard instructions above.

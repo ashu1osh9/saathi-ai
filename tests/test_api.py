@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import app as server
+from saathi import app as server
 
 
 class TestAPI(unittest.TestCase):

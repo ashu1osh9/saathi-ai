@@ -2,7 +2,7 @@
 
 **Purpose:** show useful Hindi/Hinglish voice interaction and user control with genuine Gnani services. The timeline is a rehearsal plan, not a measured API latency claim. Do not replace slow or failed calls with staged success.
 
-For built-in Windows recording steps, see [PRESUBMISSION_CHECK.md](PRESUBMISSION_CHECK.md#simplest-authentic-windows-recording).
+For built-in Windows recording steps, see [PRESUBMISSION_CHECK.md](../reports/PRESUBMISSION_CHECK.md#simplest-authentic-windows-recording).
 
 ## Before recording
 

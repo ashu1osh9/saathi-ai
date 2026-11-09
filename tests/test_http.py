@@ -31,7 +31,7 @@ class TestDemoHTTP(unittest.TestCase):
         cls.log = cls.log_path.open('w', encoding='utf-8')
         env = {**os.environ, 'GNANI_API_KEY': '', 'SAATHI_DB_PATH': str(Path(cls.temp.name) / 'demo.db')}
         cls.server = subprocess.Popen(
-            [sys.executable, '-B', '-m', 'uvicorn', 'app:app', '--host', '127.0.0.1', '--port', str(cls.port)],
+            [sys.executable, '-B', '-m', 'uvicorn', 'saathi.app:app', '--host', '127.0.0.1', '--port', str(cls.port)],
             cwd=ROOT, env=env, stdout=cls.log, stderr=cls.log,
             creationflags=0x08000000 if os.name == 'nt' else 0,
         )

@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/frontend.test.cjs",
-    "check": "node --check static/app.js && node --check static/audio.js"
+    "check": "node --check src/saathi/static/app.js && node --check src/saathi/static/audio.js"
   },
   "engines": {"node": ">=20"}
 }

@@ -16,9 +16,9 @@ from unittest.mock import patch
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-import app as server
-import demo_security
-import serve
+from saathi import app as server
+from saathi import demo_security
+from saathi import serve
 
 PASSWORD = 'unit-test-only-demo-password'
 HASH = demo_security.password_hash(PASSWORD)
@@ -144,7 +144,7 @@ class TestRailwaySecurity(unittest.TestCase):
                 self.assertEqual(self.client.get('/', headers=self.auth('incorrect')).status_code, 401)
             self.assertEqual(self.client.get('/', headers=self.auth()).status_code, 429)
             # Advancing the clock to the next fixed minute permits recovery.
-            with patch('demo_security.time.monotonic', return_value=10**12):
+            with patch('saathi.demo_security.time.monotonic', return_value=10**12):
                 self.assertEqual(self.client.get('/', headers=self.auth()).status_code, 200)
 
     def test_speech_quotas_prevent_provider_calls_and_survive_restart(self):
@@ -160,7 +160,7 @@ class TestRailwaySecurity(unittest.TestCase):
             self.assertEqual(self.client.post('/api/command', headers=self.auth(), json={'text': 'help'}).status_code, 200)
 
     def test_daily_budget_and_concurrent_reservations_are_atomic(self):
-        with patch.dict(os.environ, {'SAATHI_SPEECH_PER_DAY': '2'}), patch('app.time.time', return_value=1700000000):
+        with patch.dict(os.environ, {'SAATHI_SPEECH_PER_DAY': '2'}), patch('saathi.app.time.time', return_value=1700000000):
             def reserve(_):
                 try:
                     server.reserve_speech_request()
@@ -169,10 +169,10 @@ class TestRailwaySecurity(unittest.TestCase):
                     return error.status_code
             with ThreadPoolExecutor(max_workers=4) as pool:
                 self.assertEqual(sorted(pool.map(reserve, range(4))), [200, 200, 429, 429])
-            with patch('app.time.time', return_value=1700000120), self.assertRaises(HTTPException) as error:
+            with patch('saathi.app.time.time', return_value=1700000120), self.assertRaises(HTTPException) as error:
                 server.reserve_speech_request()
             self.assertEqual(error.exception.status_code, 429)
-            with patch('app.time.time', return_value=1700086400):
+            with patch('saathi.app.time.time', return_value=1700086400):
                 server.reserve_speech_request()
 
     def test_database_failure_cannot_allow_paid_call(self):
@@ -197,6 +197,7 @@ class TestRailwayEntrypoint(unittest.TestCase):
     def test_port_single_worker_and_proxy_trust_are_explicit(self):
         with patch.dict(os.environ, {'PORT': '9182', 'FORWARDED_ALLOW_IPS': '*'}):
             command = serve.command()
+            self.assertIn('saathi.app:app', command)
             self.assertEqual(command[command.index('--port') + 1], '9182')
             self.assertEqual(command[command.index('--workers') + 1], '1')
             self.assertEqual(command[command.index('--forwarded-allow-ips') + 1], '*')

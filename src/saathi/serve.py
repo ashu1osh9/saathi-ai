@@ -55,18 +55,22 @@ def command():
             raise ValueError
     except ValueError:
         raise RuntimeError('PORT must be an integer from 1 to 65535.') from None
-    return [sys.executable, '-m', 'uvicorn', 'app:app', '--host', '0.0.0.0', '--port', str(port),
+    return [sys.executable, '-m', 'uvicorn', 'saathi.app:app', '--host', '0.0.0.0', '--port', str(port),
             '--workers', '1', '--proxy-headers', '--forwarded-allow-ips', os.getenv('FORWARDED_ALLOW_IPS', '127.0.0.1'),
             '--no-access-log']
 
 
-if __name__ == '__main__':
+def main():
     arguments = command()
     prepare_storage()
     if os.name == 'nt':
         # Windows exec spawns a replacement PID; keep local startup/test cleanup
         # in this process instead. Linux containers still use a direct exec.
-        from uvicorn.main import main
-        main(args=arguments[3:])
+        from uvicorn.main import main as uvicorn_main
+        uvicorn_main(args=arguments[3:])
     else:
         os.execv(sys.executable, arguments)
+
+
+if __name__ == '__main__':
+    main()

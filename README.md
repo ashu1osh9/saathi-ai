@@ -1,161 +1,199 @@
-﻿# Saathi AI
+# Saathi AI
 
-**Your voice. Your independence.**  
-A Hindi/Hinglish voice companion for visually impaired users and people with limited mobility, prepared for the **Gnani AI Internship Challenge 2026**.
+**Accessible Hindi/Hinglish voice assistance with real Gnani speech.**
 
-Saathi reads its own inbox, extracts key details, drafts local replies and creates reminders. Real **Gnani Prisma** transcribes speech; real **Gnani Timbre** speaks the response. Users see what was heard and confirm before saving a draft, creating a reminder or marking one done.
+Saathi helps visually impaired users and people with limited mobility read an
+in-app inbox, extract key details, draft replies and create reminders. **Gnani
+Prisma** transcribes recorded speech; **Gnani Timbre** generates spoken feedback.
+Editable transcripts, keyboard controls and explicit confirmation keep the user
+in control of every saved action.
 
-[Final pre-submission check / push commands](PRESUBMISSION_CHECK.md) · [60-second demo script](DEMO_SCRIPT.md) · [Submission draft](SUBMISSION.md) · [Verification record](AUDIT.md) · [Deployment](DEPLOYMENT.md) · [Physical voice checklist](VOICE_TESTING.md)
+This is an existing, working FastAPI application organized as an installable
+Python package. It uses real provider calls, not a simulated speech-success mode.
+It is prepared for a restricted evaluator demo and an AI engineering portfolio;
+it is not an unrestricted multi-user messaging service.
+
+[Demo script](docs/demo/DEMO_SCRIPT.md) ? [Verification](docs/reports/AUDIT.md) ?
+[Architecture and refactor](docs/reports/STRUCTURE_REFACTOR.md) ?
+[Railway](docs/deployment/RAILWAY_DEPLOYMENT.md) ?
+[Compose/Caddy](docs/deployment/DEPLOYMENT.md) ? [Documentation](docs/README.md)
+
+## Features
+
+| Workflow | Example | Implemented behavior |
+| --- | --- | --- |
+| Read messages | `मेरा संदेश पढ़ो` / `Mera message padho` | Reads the latest message, or up to 30 recent messages on request |
+| Extract key details | `Message ka summary batao` | Selects existing sentences; no generative LLM summary |
+| Draft a reply | `Ravi ko message likho, main aaunga` | Reviews recipient/body and saves locally only after confirmation; never sends |
+| Create a reminder | `एक मिनट बाद पानी पीना याद दिलाना` | Reviews the parsed future timestamp before saving |
+| Confirm or cancel | `हाँ` / `haan`, `नहीं` / `nahi` | Applies only to the displayed, expiring, one-use review |
+| Typed fallback | Editable transcript and Ctrl+Enter | The same intent and action workflows work without speech credentials |
+
+The interface retains large controls, visible keyboard focus, a skip link,
+screen-reader labels/live status, persistent high contrast and larger text,
+reduced-motion support, and separate written-action and audio-playback outcomes.
+**Alt+M** toggles recording; **Escape** stops/discards recording or cancels review.
+Confirmation starts on Cancel and wraps keyboard focus. These engineering checks
+do not constitute accessibility certification or intended-user research.
 
 ## Screenshots
 
-Actual Chrome screenshots from real Gnani acceptance tests, using only a disposable example inbox. No personal messages or credentials are shown. The microphone input in automated voice tests is genuine generated speech fed through a virtual microphone; the owner also reports a manual real-voice pass.
+Actual Chrome captures from previous real-provider acceptance, using disposable
+example data. Automated voice tests use genuine generated audio through a virtual
+microphone; the owner separately reports successful manual voice testing.
 
-<details open>
-<summary>Desktop voice space</summary>
-
-![Saathi desktop interface with a Hindi transcript, extractive message details, audio controls and verified Prisma/Timbre calls](docs/screenshots/desktop.png)
-
-</details>
+![Desktop transcript, message, review and spoken-feedback interface](docs/screenshots/desktop.png)
 
 <details>
-<summary>Mobile layout</summary>
-
-<img src="docs/screenshots/mobile.png" width="320" alt="Saathi at a 390-pixel mobile viewport, with stacked controls, readable Hindi text and the same voice workflows" />
-
+<summary>Mobile interface</summary>
+<img src="docs/screenshots/mobile.png" width="320" alt="Saathi at a mobile viewport with stacked large controls and readable Hindi text" />
 </details>
-
-## What works
-
-| Workflow | Example command | Result |
-| --- | --- | --- |
-| Read a message | `मेरा संदेश पढ़ो` / `Mera message padho` | Reads the latest message in the Saathi inbox |
-| Read recent messages | `Sab messages padho` | Reads up to 30 recent messages |
-| Explain key details | `Message ka summary batao` | Extracts up to three sentences from the latest message |
-| Summarize recent inbox | `Sab messages ka summary batao` | Extractive details for up to 30 recent messages |
-| Draft a reply | `Ravi ko message likho, main aaunga` | Reviews recipient/body, then saves locally after confirmation |
-| Create a reminder | `एक मिनट बाद पानी पीना याद दिलाना` | Reviews the actual future time before saving |
-| Confirm / cancel | `हाँ` / `haan`, `नहीं` / `nahi` | Applies only to the displayed pending review |
-| Stop / help | `stop speaking`, `मदद` | Stops playback or explains supported tasks |
-
-The original FastAPI/SQLite app has been extended in place. There is no replacement frontend framework, fake speech-success mode, browser speech-provider substitution or production provider fixture.
-
-## Accessibility and user control
-
-- At least 48-pixel controls, visible keyboard focus, skip navigation, accessible labels and live status/error messages.
-- Hindi/Hinglish transcripts remain editable and visible next to the written response; long responses are keyboard-scrollable.
-- Persistent high contrast, larger text, speech language/speed and automatic spoken feedback preferences.
-- **Alt+M** starts/stops recording; **Ctrl+Enter** runs the typed command; **Escape** stops/discards recording or cancels a review.
-- Confirmation dialogs start on Cancel, wrap Tab/Shift+Tab, offer spoken review/confirmation and return focus when closed.
-- One-use, five-minute server-side reviews freeze the proposed action. Retrying the same confirmation cannot create duplicate saves.
-- Recording is click-to-toggle, up to 25 seconds. Playback has replay/stop/native controls and sequential chunks for longer text.
-- Motion is limited to short transitions and active-listening feedback; reduced-motion and forced-color preferences are respected.
-
-Core manual voice acceptance is reported by the owner. Automated checks do not constitute accessibility certification, a target-user usability study, or a measured recognition-accuracy claim. Human screen-reader acceptance and background-tab behavior still need evaluation within their documented limits.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    User[Voice or keyboard] --> UI[Accessible HTML / CSS / JavaScript]
-    UI -->|MediaRecorder + 16 kHz WAV| API[FastAPI]
+    User[User: voice or keyboard] <--> Browser[Accessible browser UI]
+    Browser <-->|same-origin HTTP; WAV and JSON| API[FastAPI: intent routing, auth, limits and reviews]
     API -->|server-only key| Prisma[Gnani Prisma STT]
-    Prisma --> Router[Hindi / Hinglish intent router]
-    Router --> Review[Read / summarize / review action]
-    Review --> DB[(SQLite)]
-    Review --> Timbre[Gnani Timbre TTS]
-    Timbre -->|validated WAV| UI
+    API -->|server-only key| Timbre[Gnani Timbre TTS]
+    API <-->|confirmed writes| DB[(SQLite: messages, drafts, reminders, tokens and quotas)]
 ```
 
-**Technologies:** Python 3.12, FastAPI, Pydantic, requests, SQLite, HTML/CSS/JavaScript, MediaRecorder/Web Audio, Node's test runner and Playwright/Chrome. Runtime versions are pinned in `requirements.lock`; `requirements.txt` records supported dependency ranges.
+The browser records audio and converts it to 16 kHz mono PCM WAV. FastAPI validates
+uploads, calls Prisma, routes the returned text through bounded Hindi/Hinglish
+intent/time logic and creates frozen action reviews. Timbre returns real audio;
+the browser plays it in sequence, keeping the written result available on errors.
 
-Prisma uses the official [STT REST endpoint](https://docs.gnani.ai/api/STT/speech-to-text) with multipart audio and `X-API-Key-ID`. Timbre uses the official [TTS REST endpoint](https://docs.gnani.ai/api/TTS/tts-inference) with real binary WAV output. Default models are `prisma-v3.0` and `timbre-v2.5`, voice `Nalini`. The server validates recordings, sanitizes errors, limits concurrent speech requests and finalizes streamed WAV length fields without altering PCM samples.
+Technology: Python/FastAPI/Pydantic, SQLite, Requests, vanilla HTML/CSS/JavaScript,
+MediaRecorder/Web Audio, unittest, Node's test runner, Playwright/Chromium, Docker,
+GitHub Actions, Railway or Caddy. Runtime dependency versions remain pinned in
+`requirements.lock`; `pyproject.toml` defines package metadata and dependencies.
+
+```text
+src/saathi/             Python package and bundled static assets
+  app.py                HTTP API, database actions and production boundary
+  gnani.py              Real Prisma/Timbre HTTP adapter and audio validation
+  logic.py              Intent detection, extractive summaries and reminder parsing
+  demo_security.py      Application authentication and bounded request controls
+  serve.py              Container PORT binding and non-root volume startup
+  static/               Existing browser interface
+ tests/                 Backend, frontend, browser, security and packaging tests
+ tools/                 Password hashing, Docker acceptance and safe release checks
+ docs/                  Demo, deployment, reports and screenshots
+ deploy/Caddyfile       Alternative HTTPS/password gateway
+```
 
 ## Run on Windows PowerShell
 
-This workspace already has a prepared `.venv`. To start after stopping the existing server:
+Use Python 3.12 (the tested runtime) and Chrome. Node 22 is used for frontend tests.
+Start from the repository root; retain your existing `.env` and database.
 
 ```powershell
 Set-Location -LiteralPath 'D:\Gennai\saathi-ai'
-& .\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000
-```
-
-Open **http://127.0.0.1:8000** in Chrome. Keep the terminal and browser tab open. No virtual-environment activation or execution-policy change is needed. Stop with **Ctrl+C**. After editing `.env`, restart the server and refresh Chrome.
-
-For a fresh checkout, install Python 3.12 with the `py` launcher and run from the project folder:
-
-```powershell
-py -3.12 -m venv .venv
-if ($LASTEXITCODE -ne 0) { throw 'Install Python 3.12 and retry.' }
-& .\.venv\Scripts\python.exe -m pip install -r .\requirements.lock
-if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
-& .\.venv\Scripts\python.exe -m pip check
-if (-not (Test-Path -LiteralPath '.\.env')) {
-    Copy-Item -LiteralPath '.\.env.example' -Destination '.\.env'
+if (!(Test-Path -LiteralPath '.venv\Scripts\python.exe')) {
+    py -3.12 -m venv .venv
+}
+& .\.venv\Scripts\python.exe -m pip install -r .\requirements.txt
+if ($LASTEXITCODE -ne 0) { throw 'Installation failed.' }
+if (!(Test-Path -LiteralPath '.env')) {
+    Copy-Item -LiteralPath '.env.example' -Destination '.env'
 }
 notepad.exe .\.env
+& .\.venv\Scripts\python.exe -m uvicorn saathi.app:app --host 127.0.0.1 --port 8000
 ```
 
-Set `GNANI_API_KEY` in that server `.env` using your key from [Gnani's platform](https://app.gnani.ai/voice), save, then start with the command above. Never put the key in frontend files, screenshots or shell command arguments. Without a key, typed inbox/draft/reminder tasks work and speech is explicitly unavailable. `start_windows.bat` is an alternative launcher for Windows.
+Set `GNANI_API_KEY` privately in the root `.env` for real voice. Never put it in
+frontend code, Git, screenshots or shell arguments. Typed features remain usable
+with a blank key. Open **http://127.0.0.1:8000** and allow microphone access. The
+existing `start_windows.bat` installs the package and starts the same local app.
 
-Check the running backend from another PowerShell window:
+Editable/source installs resolve optional `.env` and default `saathi.db` at the
+checkout root, even when launched from a different directory. A normal installed
+wheel uses the working directory for local files, never its package directory.
+`SAATHI_DB_PATH` overrides the database path. Existing environment values take
+precedence over `.env`; production uses explicit service environment variables.
+No local database or credential is migrated by the structural refactor.
 
-```powershell
-Invoke-RestMethod -Uri 'http://127.0.0.1:8000/api/health' | Format-List
-```
+`GET /api/health` is a non-billed configuration check. `connection_verified=false`
+means health itself does not call Gnani; the UI reports actual speech-call success
+separately. Recording requires localhost or trusted HTTPS plus microphone access.
 
-`gnani_configured` checks presence only. Health's `connection_verified=False` means this route itself does not make a paid provider call. The UI reports successful Prisma/Timbre calls only after they actually succeed in that browser session. Browser recording requires localhost or HTTPS and microphone permission.
+## Test and verify
 
-## Tests and evidence
-
-All final test outcomes, including any failed attempt and its fix, are recorded in [AUDIT.md](AUDIT.md). These are engineering checks, not latency, WER, user-impact or accessibility-certification metrics.
-
-```powershell
-& .\.venv\Scripts\python.exe -m pip install -r .\requirements-dev.txt
-& .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
-node --test tests/frontend.test.cjs
-node --check static/app.js
-node --check static/audio.js
-```
-
-Normal discovery deliberately skips optional Chrome/live-provider tests. To run the non-billed Chrome suite with installed Chrome:
+Run from the repository root:
 
 ```powershell
 & .\.venv\Scripts\python.exe -m pip install -r .\requirements-e2e.txt
-$env:SAATHI_BROWSER_CHANNEL = 'chrome'
+& .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
+node --test tests/frontend.test.cjs
+npm run check
+& .\.venv\Scripts\python.exe -m pip check
+```
+
+To include the non-billed Playwright suite:
+
+```powershell
+$env:PLAYWRIGHT_BROWSERS_PATH = Join-Path (Get-Location) '.browser-test\chromium'
+& .\.venv\Scripts\python.exe -m playwright install chromium
 $env:SAATHI_E2E = '1'
 try {
-    & .\.venv\Scripts\python.exe -B -m unittest discover -s tests -p test_browser.py -v
+    & .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
+    if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
 } finally {
     Remove-Item Env:\SAATHI_E2E -ErrorAction SilentlyContinue
-    Remove-Item Env:\SAATHI_BROWSER_CHANNEL -ErrorAction SilentlyContinue
 }
 ```
 
-For real billed provider tests and the physical microphone checklist, follow [VOICE_TESTING.md](VOICE_TESTING.md). Live Chrome tests use genuine Gnani-generated speech through a virtual microphone, real API calls and disposable SQLite storage. Unit transport fixtures exist only in tests. GitHub Actions is configured for offline-contract/backend/frontend/Chrome checks, a container build and disposable container auth/storage acceptance; it does not automatically use Gnani credentials, push an image or deploy.
+With a running Docker engine, build and exercise actual authentication, PORT,
+non-root storage and restart persistence using disposable data:
 
-## Deployment and privacy
+```powershell
+docker build --tag saathi-ai:ci .
+if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+& .\.venv\Scripts\python.exe -B .\tools\container_smoke.py --image saathi-ai:ci
+if ($LASTEXITCODE -ne 0) { throw 'Container acceptance failed.' }
+```
 
-[RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) prepares a single-service Railway demo with Railway HTTPS, application password authentication, one non-root Uvicorn worker, persisted SQLite at `/data/saathi.db` and bounded speech/request quotas. [DEPLOYMENT.md](DEPLOYMENT.md) retains the alternative Compose/Caddy route. Real hosted TLS, microphone/Gnani flows, mounted-volume behavior and production acceptance still require explicit deployment authorization and verification. **No deployment was performed by this preparation.**
+Exact executed counts, failures/fixes and limits are in
+[the refactor report](docs/reports/STRUCTURE_REFACTOR.md) and
+[the audit](docs/reports/AUDIT.md). Unit fixtures remain test-only. Billed live
+Gnani tests require explicit opt-in; see the [voice checklist](docs/demo/VOICE_TESTING.md).
+They are not enabled automatically by CI or these commands.
 
-`.gitignore` excludes `.env`, production secrets, local runtimes, databases, recordings, caches, logs and private folders. `.dockerignore` allows only app source and pinned requirements into the image. Screenshots contain controlled example data. The owner reports the repository published with green CI on `493627f`; these deployment changes still need review and a fresh green run. Run the staged-source/ZIP checker in [PRESUBMISSION_CHECK.md](PRESUBMISSION_CHECK.md) after staging edits and before publication. Disable Railway autodeploy before pushing preparation changes.
+## Deployment and security
 
-## Scope and limitations
+[Railway setup](docs/deployment/RAILWAY_DEPLOYMENT.md) uses the Dockerfile,
+application-level password authentication over Railway HTTPS, exact host checks,
+one Uvicorn worker/replica and SQLite on a `/data` volume. The startup helper
+repairs the root-owned mount and drops to UID/GID 10001 before serving requests.
+[Compose/Caddy](docs/deployment/DEPLOYMENT.md) retains its separate gateway-token
+boundary, HTTPS/password gate and private application network.
 
-- Reads only messages added to Saathi's inbox; no SMS/WhatsApp/Gmail/OS notification or screen import.
-- Drafts are never sent. Summaries are extractive, not LLM-generated.
-- Reminders persist but announcements require the open app; background throttling can delay them. No closed-tab push or system-alarm guarantee.
-- A bounded intent/time grammar handles supported commands and asks for missing/ambiguous details. Recognition errors can occur; always review names, reply content and time.
-- SQLite and the prepared password gate support a restricted single-user evaluator demo, not isolated multi-user accounts or an unrestricted public service.
-- Audio/text are sent to Gnani for the requested speech operations. Saathi does not persist recordings in normal operation. Local inbox/draft/reminder data is private and must not be published.
+Both modes preserve same-origin mutation checks, restrictive browser headers,
+request/upload limits, persistent speech-attempt quotas, timeouts and truthful
+failure handling. These demo safeguards are not comprehensive DDoS protection or
+a monetary spending guarantee. All authenticated evaluators share the example
+inbox. Keep secrets private and verify hosted TLS, voice, storage and backup/restore
+after separately authorizing deployment.
 
-## Submission materials
+The current work belongs to **`refactor/professional-structure`**. No push, merge or
+deployment is performed by the refactor. Keep Railway autodeploy disabled while
+reviewing it. `.gitignore`, Docker's source allowlist and the release checker
+exclude credentials, databases, recordings, local runtimes, caches and build output.
 
-- [DEMO_SCRIPT.md](DEMO_SCRIPT.md): rehearsable 60-second real demo and honest failure handling.
-- [SUBMISSION.md](SUBMISSION.md): problem, target users, solution, technology, impact boundaries and contributor fields requiring owner confirmation.
-- [AUDIT.md](AUDIT.md): verification evidence and limitations.
-- [VOICE_TESTING.md](VOICE_TESTING.md): automated and manual voice acceptance.
-- [DEPLOYMENT.md](DEPLOYMENT.md): authorization-dependent production steps.
-- [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md): exact Railway variables, volume permissions, password gate and dashboard setup.
+## Scope and competition materials
 
-Complete the contributor names, record the final video and review the organizer's submission form before the November 10, 2026 target date supplied by the project owner. No metrics, testimonials, organizer acceptance, public URL or publication status have been fabricated.
+Saathi reads only its own inbox; it does not import SMS, WhatsApp, email, OS
+notifications or screen contents. Drafts are never sent. Reminders persist, but
+announcements require the open app and can be delayed by background throttling.
+There are no isolated multi-user accounts or guaranteed closed-tab alarms.
+
+The [60-second script](docs/demo/DEMO_SCRIPT.md),
+[submission content](docs/demo/SUBMISSION.md),
+[physical voice checklist](docs/demo/VOICE_TESTING.md) and
+[pre-submission report](docs/reports/PRESUBMISSION_CHECK.md) are retained for the
+Gnani AI Internship Challenge target date of November 10, 2026 supplied by the owner.
+Contributor fields/final video require owner completion. No user metrics, provider
+accuracy figures, testimonials, certification, public deployment URL or organizer
+acceptance is fabricated.
