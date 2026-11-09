@@ -1,6 +1,8 @@
 # Private HTTPS demo deployment
 
-Deployment configuration is prepared, not deployed. No GitHub push or hosting change has been made. Obtain the owner's explicit authorization before running a deployment command or publishing source.
+Deployment configuration is prepared, not deployed. The owner reports the repository published and CI green on `493627f`; no hosting change has been made by this work. Obtain the owner's explicit authorization before deployment.
+
+For the single-service Railway route, use [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md): Railway TLS, application-level password authentication, dynamic PORT and a `/data` volume. The instructions below retain the existing **Docker Compose + Caddy** route. Do not combine their authentication variables or import the Compose gateway into the Railway setup.
 
 ## Intended scope
 
@@ -20,7 +22,7 @@ flowchart LR
 - `.dockerignore`: allowlisted build context; excludes `.env`, user data, recordings, tests and local environments.
 - `compose.yaml`: only Caddy publishes ports; the app's root filesystem is read-only, `/tmp` is bounded, and `/data` is a persistent volume.
 - `deploy/Caddyfile`: automatic HTTPS, hashed-password authentication on every proxied route, 9 MB request-body limit, removal of the browser's Basic Authorization header before forwarding, and a private gateway header.
-- Production app: requires explicit hosts, a strong gateway token and Gnani credentials; rejects direct unauthenticated API/data access, untrusted hosts and non-HTTPS requests. Existing same-origin checks and microphone policy remain enabled.
+- Production app in Compose: `SAATHI_AUTH_MODE=gateway` requires explicit hosts, a strong gateway token and Gnani credentials; rejects direct unauthenticated API/data access, untrusted hosts and non-HTTPS requests. Existing same-origin checks and microphone policy remain enabled. Production now also enforces a 9 MiB streaming body limit, a default 120 requests/minute, and persisted combined STT/TTS attempt quotas of 20/minute and 200/UTC day. They protect both hosting paths; see the Railway guide for configurable caps and limits.
 
 Caddy's [automatic HTTPS](https://caddyserver.com/docs/automatic-https) requires working DNS, reachable ports and persistent certificate storage. Its [Basic Authentication](https://caddyserver.com/docs/caddyfile/directives/basic_auth) requires a password hash and must be used over HTTPS. Trusted forwarded headers are enabled only because the app is inside the private Compose network; do not publish app port 8000 on the host. See [FastAPI's proxy guidance](https://fastapi.tiangolo.com/advanced/behind-a-proxy/).
 
@@ -98,4 +100,4 @@ Record the approved image/version and back up data before upgrades. Restore the 
 - **Verified:** production application guards/persistence tests, real Git exclusion rules, Compose syntax (`config --quiet` with validation-only values), Caddy configuration validation using official Caddy 2.11.8, and availability of all 19 pinned Linux/Python 3.12 runtime wheels.
 - **Not executed:** Docker image build or container runtime tests, because the local Docker daemon is not running. No production DNS, TLS certificate, gateway login or remote persistence test has occurred.
 - **Not deployed:** host/domain, login password/hash, production gateway token and production environment must be configured by the owner, followed by authorization and the deployment acceptance checks above.
-- **Limits:** shared single-user data, no per-user isolation or production abuse/rate-limit system, no guaranteed closed/background-tab alarm, no outgoing SMS/WhatsApp/email, no uptime/latency guarantees. Keep the demo restricted to trusted evaluators and monitor account usage.
+- **Limits:** shared single-user data, no per-user isolation, bounded demo-level rate/usage controls rather than comprehensive abuse/DDoS protection, no guaranteed closed/background-tab alarm, no outgoing SMS/WhatsApp/email, no uptime/latency guarantees. Keep the demo restricted to trusted evaluators and monitor account usage.

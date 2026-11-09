@@ -132,13 +132,13 @@ try {
 }
 ```
 
-For real billed provider tests and the physical microphone checklist, follow [VOICE_TESTING.md](VOICE_TESTING.md). Live Chrome tests use genuine Gnani-generated speech through a virtual microphone, real API calls and disposable SQLite storage. Unit transport fixtures exist only in tests. GitHub Actions is configured for offline-contract/backend/frontend/Chrome checks and a container build; it does not automatically use Gnani credentials, push an image or deploy.
+For real billed provider tests and the physical microphone checklist, follow [VOICE_TESTING.md](VOICE_TESTING.md). Live Chrome tests use genuine Gnani-generated speech through a virtual microphone, real API calls and disposable SQLite storage. Unit transport fixtures exist only in tests. GitHub Actions is configured for offline-contract/backend/frontend/Chrome checks, a container build and disposable container auth/storage acceptance; it does not automatically use Gnani credentials, push an image or deploy.
 
 ## Deployment and privacy
 
-[DEPLOYMENT.md](DEPLOYMENT.md) describes the prepared private HTTPS demo: Caddy authentication/TLS, a non-root app, internal gateway verification and persistent SQLite/certificate volumes. Remote TLS, container runtime and production acceptance remain to be verified after host configuration and explicit authorization. **No deployment or GitHub push has been performed.**
+[RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) prepares a single-service Railway demo with Railway HTTPS, application password authentication, one non-root Uvicorn worker, persisted SQLite at `/data/saathi.db` and bounded speech/request quotas. [DEPLOYMENT.md](DEPLOYMENT.md) retains the alternative Compose/Caddy route. Real hosted TLS, microphone/Gnani flows, mounted-volume behavior and production acceptance still require explicit deployment authorization and verification. **No deployment was performed by this preparation.**
 
-`.gitignore` excludes `.env`, production secrets, local runtimes, databases, recordings, caches, logs and private folders. `.dockerignore` allows only app source and pinned requirements into the image. Screenshots contain controlled example data. A local `main` repository is prepared with reviewed source staged; no remote, commit or push has been created automatically. Run the staged-source/ZIP checker in [PRESUBMISSION_CHECK.md](PRESUBMISSION_CHECK.md) again after editing and before publication.
+`.gitignore` excludes `.env`, production secrets, local runtimes, databases, recordings, caches, logs and private folders. `.dockerignore` allows only app source and pinned requirements into the image. Screenshots contain controlled example data. The owner reports the repository published with green CI on `493627f`; these deployment changes still need review and a fresh green run. Run the staged-source/ZIP checker in [PRESUBMISSION_CHECK.md](PRESUBMISSION_CHECK.md) after staging edits and before publication. Disable Railway autodeploy before pushing preparation changes.
 
 ## Scope and limitations
 
@@ -156,5 +156,6 @@ For real billed provider tests and the physical microphone checklist, follow [VO
 - [AUDIT.md](AUDIT.md): verification evidence and limitations.
 - [VOICE_TESTING.md](VOICE_TESTING.md): automated and manual voice acceptance.
 - [DEPLOYMENT.md](DEPLOYMENT.md): authorization-dependent production steps.
+- [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md): exact Railway variables, volume permissions, password gate and dashboard setup.
 
 Complete the contributor names, record the final video and review the organizer's submission form before the November 10, 2026 target date supplied by the project owner. No metrics, testimonials, organizer acceptance, public URL or publication status have been fabricated.

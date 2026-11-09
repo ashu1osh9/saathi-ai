@@ -33,4 +33,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build --tag saathi-ai:ci .
-      # Build validation only. No registry push and no deployment.
+      - run: python3 tools/container_smoke.py --image saathi-ai:ci
+      # Build and disposable local runtime checks only. No registry push or deployment.

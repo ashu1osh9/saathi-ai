@@ -2,8 +2,10 @@
 import json
 import hmac
 import os
+import re
 import secrets
 import sqlite3
+import time
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 
 from logic import contains, decide_command, digest_message, normalize, parse_draft, parse_reminder
+from demo_security import BodySizeLimit, LIMITS, RequestLimits, production_environment, valid_password_hash, verify_basic
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
@@ -44,27 +47,48 @@ def init_db():
         c.execute('CREATE TABLE IF NOT EXISTS drafts (id INTEGER PRIMARY KEY AUTOINCREMENT, recipient TEXT NOT NULL, body TEXT NOT NULL, created_at TEXT NOT NULL)')
         c.execute('CREATE TABLE IF NOT EXISTS reminders (id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT NOT NULL, due_at TEXT NOT NULL, done INTEGER NOT NULL DEFAULT 0)')
         c.execute('CREATE TABLE IF NOT EXISTS pending_actions (token_hash TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL, expires_at TEXT NOT NULL)')
+        c.execute('CREATE TABLE IF NOT EXISTS speech_usage (bucket TEXT PRIMARY KEY, window INTEGER NOT NULL, used INTEGER NOT NULL)')
 
 
 @asynccontextmanager
 async def lifespan(application):
     validate_production_config()
+    application.state.request_limits = RequestLimits()
     init_db()
     yield
 
 
 def production_mode():
-    return os.getenv('SAATHI_ENV', 'development').casefold() == 'production'
+    return production_environment()
 
 
 def validate_production_config():
     if not production_mode():
         return
     hosts = [host.strip() for host in os.getenv('SAATHI_ALLOWED_HOSTS', '').split(',') if host.strip()]
-    if not hosts or '*' in hosts:
+    if not hosts or any(not re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?', host) or '..' in host for host in hosts):
         raise RuntimeError('Production requires explicit SAATHI_ALLOWED_HOSTS.')
-    if len(os.getenv('SAATHI_PROXY_TOKEN', '')) < 32:
-        raise RuntimeError('Production requires a strong SAATHI_PROXY_TOKEN of at least 32 characters.')
+    mode = os.getenv('SAATHI_AUTH_MODE', 'gateway')
+    if mode == 'gateway':
+        if len(os.getenv('SAATHI_PROXY_TOKEN', '')) < 32:
+            raise RuntimeError('Production requires a strong SAATHI_PROXY_TOKEN of at least 32 characters.')
+    elif mode == 'basic':
+        if not re.fullmatch(r'[A-Za-z0-9._-]{1,64}', os.getenv('SAATHI_DEMO_USER', '')) or not valid_password_hash(os.getenv('SAATHI_APP_PASSWORD_HASH', '')):
+            raise RuntimeError('Application authentication requires SAATHI_DEMO_USER and a valid SAATHI_APP_PASSWORD_HASH.')
+    else:
+        raise RuntimeError('SAATHI_AUTH_MODE must be gateway or basic; production authentication cannot be disabled.')
+    if os.getenv('RAILWAY_ENVIRONMENT_ID') or os.getenv('RAILWAY_VOLUME_MOUNT_PATH'):
+        if mode != 'basic' or os.getenv('RAILWAY_VOLUME_MOUNT_PATH') != '/data' or os.getenv('SAATHI_DB_PATH') != '/data/saathi.db':
+            raise RuntimeError('Railway requires application authentication and persistent storage at /data/saathi.db.')
+        if hasattr(os, 'geteuid') and os.geteuid() == 0:
+            raise RuntimeError('Railway app must run as non-root. Keep the Dockerfile startup command.')
+    for name, (default, maximum) in LIMITS.items():
+        try:
+            value = int(os.getenv(name, str(default)))
+            if not 1 <= value <= maximum:
+                raise ValueError
+        except ValueError:
+            raise RuntimeError(f'{name} must be an integer from 1 to {maximum}.') from None
     if not gnani.configuration()['key']:
         raise RuntimeError('Production requires GNANI_API_KEY on the server.')
 
@@ -73,27 +97,12 @@ app = FastAPI(title='Saathi AI', version='0.3.0', lifespan=lifespan,
               docs_url=None if production_mode() else '/docs',
               redoc_url=None if production_mode() else '/redoc')
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
+app.add_middleware(BodySizeLimit)
 
 
 @app.middleware('http')
 async def browser_security(request: Request, call_next):
-    if production_mode():
-        hosts = {host.strip().casefold() for host in os.getenv('SAATHI_ALLOWED_HOSTS', '').split(',') if host.strip()}
-        hosts.update({'127.0.0.1', 'localhost', '::1'})
-        if request.url.hostname not in hosts:
-            return JSONResponse({'detail': 'Host is not allowed.'}, status_code=400)
-        # Caddy authenticates the evaluator and overwrites this internal header.
-        # The backend remains protected even if its port is accidentally exposed.
-        expected = os.getenv('SAATHI_PROXY_TOKEN', '')
-        if request.url.path != '/api/health' and (len(expected) < 32 or not hmac.compare_digest(request.headers.get('x-saathi-gateway', '').encode(), expected.encode())):
-            return JSONResponse({'detail': 'Use the authenticated HTTPS demo gateway.'}, status_code=403)
-        if request.url.path != '/api/health' and request.url.scheme != 'https':
-            return JSONResponse({'detail': 'HTTPS is required in production.'}, status_code=403)
-    origin = request.headers.get('origin')
-    if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
-        if request.headers.get('sec-fetch-site') == 'cross-site' or (origin and (urlsplit(origin).netloc != request.url.netloc or urlsplit(origin).scheme != request.url.scheme)):
-            return JSONResponse({'detail': 'Cross-origin actions are not allowed.'}, status_code=403)
-    response = await call_next(request)
+    response = await secure_request(request, call_next)
     response.headers['Cache-Control'] = 'no-store'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'no-referrer'
@@ -102,6 +111,62 @@ async def browser_security(request: Request, call_next):
         response.headers['Strict-Transport-Security'] = 'max-age=31536000'
     response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
     return response
+
+
+async def secure_request(request: Request, call_next):
+    health_probe = request.url.path == '/api/health' and request.method in {'GET', 'HEAD'}
+    if production_mode():
+        hosts = {host.strip().casefold() for host in os.getenv('SAATHI_ALLOWED_HOSTS', '').split(',') if host.strip()}
+        if health_probe:
+            hosts.update({'127.0.0.1', 'localhost', '::1', 'healthcheck.railway.app'})
+        if request.url.hostname not in hosts:
+            return JSONResponse({'detail': 'Host is not allowed.'}, status_code=400)
+        if not health_probe and request.url.scheme != 'https':
+            return JSONResponse({'detail': 'HTTPS is required in production.'}, status_code=403)
+    origin = request.headers.get('origin')
+    if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
+        if request.headers.get('sec-fetch-site') == 'cross-site' or (origin and (urlsplit(origin).netloc != request.url.netloc or urlsplit(origin).scheme != request.url.scheme)):
+            return JSONResponse({'detail': 'Cross-origin actions are not allowed.'}, status_code=403)
+    if production_mode() and not health_probe:
+        limits = request.app.state.request_limits
+        if limits.count('requests', increment=True) > int(os.getenv('SAATHI_REQUESTS_PER_MINUTE', '120')):
+            return JSONResponse({'detail': 'Demo request limit reached. Wait a minute and retry.'}, status_code=429, headers={'Retry-After': '60'})
+        mode = os.getenv('SAATHI_AUTH_MODE', 'gateway')
+        if mode == 'basic':
+            failure_limit = int(os.getenv('SAATHI_AUTH_FAILURES_PER_MINUTE', '20'))
+            if limits.count('failures') >= failure_limit:
+                return JSONResponse({'detail': 'Too many authentication failures. Wait a minute and retry.'}, status_code=429, headers={'Retry-After': '60'})
+            verified = await run_in_threadpool(verify_basic, request.headers.get('authorization', ''), os.getenv('SAATHI_DEMO_USER', ''), os.getenv('SAATHI_APP_PASSWORD_HASH', ''))
+            if not verified:
+                limits.count('failures', increment=True)
+                return JSONResponse({'detail': 'Demo authentication required.'}, status_code=401,
+                                    headers={'WWW-Authenticate': 'Basic realm="Saathi demo", charset="UTF-8"'})
+        elif mode == 'gateway':
+            expected = os.getenv('SAATHI_PROXY_TOKEN', '')
+            if len(expected) < 32 or not hmac.compare_digest(request.headers.get('x-saathi-gateway', '').encode(), expected.encode()):
+                return JSONResponse({'detail': 'Use the authenticated HTTPS demo gateway.'}, status_code=403)
+        else:
+            return JSONResponse({'detail': 'Production authentication is not configured.'}, status_code=503)
+    return await call_next(request)
+
+
+def reserve_speech_request():
+    """Persist conservative attempt quotas before any production provider call."""
+    if not production_mode():
+        return
+    timestamp = int(time.time())
+    with db() as c:
+        c.execute('BEGIN IMMEDIATE')
+        for bucket, seconds, variable in [('minute', 60, 'SAATHI_SPEECH_PER_MINUTE'), ('day', 86400, 'SAATHI_SPEECH_PER_DAY')]:
+            window = timestamp // seconds
+            limit = int(os.getenv(variable, str(LIMITS[variable][0])))
+            row = c.execute('SELECT window, used FROM speech_usage WHERE bucket=?', (bucket,)).fetchone()
+            used = row['used'] if row and row['window'] == window else 0
+            if used >= limit:
+                raise HTTPException(429, f'Demo speech {bucket} limit reached. Written commands remain available.',
+                                    headers={'Retry-After': str(seconds - timestamp % seconds)})
+            c.execute('INSERT INTO speech_usage VALUES (?, ?, ?) ON CONFLICT(bucket) DO UPDATE SET window=excluded.window, used=excluded.used',
+                      (bucket, window, used + 1))
 
 
 @app.exception_handler(sqlite3.Error)
@@ -185,11 +250,13 @@ async def speech_to_text(audio: UploadFile = File(...)):
         await audio.close()
     if len(content) > gnani.MAX_UPLOAD:
         raise HTTPException(413, 'Recording exceeds 8 MB.')
+    await run_in_threadpool(reserve_speech_request)
     return await run_in_threadpool(gnani.transcribe, content)
 
 
 @app.post('/api/tts')
 def text_to_speech(payload: SpeechText):
+    reserve_speech_request()
     content = gnani.synthesize(payload.text, payload.language, payload.speed)
     return Response(content=content, media_type='audio/wav')
 

@@ -6,6 +6,8 @@ services:
     init: true
     environment:
       SAATHI_ENV: production
+      SAATHI_AUTH_MODE: gateway
+      FORWARDED_ALLOW_IPS: '*'
       SAATHI_DB_PATH: /data/saathi.db
       SAATHI_ALLOWED_HOSTS: ${SAATHI_DOMAIN:?Set SAATHI_DOMAIN to your real domain}
       SAATHI_PROXY_TOKEN: ${SAATHI_PROXY_TOKEN:?Set a strong private gateway token}

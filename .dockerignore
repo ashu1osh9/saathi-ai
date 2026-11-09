@@ -5,5 +5,7 @@
 !app.py
 !gnani.py
 !logic.py
+!demo_security.py
+!serve.py
 !static/
 !static/**
