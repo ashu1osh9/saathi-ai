@@ -99,7 +99,7 @@ If the shell defaults to root because of `RAILWAY_RUN_UID`, use Railway's volume
 
 ## Verification status and release commands
 
-Exact local outcomes are recorded in `AUDIT.md`. Railway TLS, real mounted-volume behavior, edge routing, hosted microphone permissions and hosted Gnani account connectivity remain unverified until an authorized deployment. The local Docker daemon is unavailable; the added disposable container acceptance check must run in CI or on a working Docker host.
+Exact local outcomes are recorded in `AUDIT.md`. The Dockerfile build and corrected disposable container acceptance now pass locally, including the exact CI smoke command from Ubuntu. The harness refreshes Docker's ephemeral host port after restart; all authentication and persistence assertions remain. The reviewed fix still needs a fresh green GitHub Actions run after the owner pushes it. Railway TLS, real mounted-volume behavior, edge routing, hosted microphone permissions and hosted Gnani account connectivity remain unverified until an authorized deployment.
 
 Before pushing, ensure Railway autodeploy is disconnected/disabled; a Git push must not silently become a deployment. Review and execute in PowerShell:
 
@@ -107,7 +107,7 @@ Before pushing, ensure Railway autodeploy is disconnected/disabled; a Git push m
 Set-Location -LiteralPath 'D:\Gennai\saathi-ai'
 git diff --check
 if ($LASTEXITCODE -ne 0) { throw 'Diff check failed.' }
-git add -- .dockerignore .github/workflows/tests.yml Dockerfile app.py compose.yaml demo_security.py serve.py railway.json RAILWAY_DEPLOYMENT.md DEPLOYMENT.md README.md AUDIT.md tests/test_railway.py tests/test_railway_http.py tools/hash_demo_password.py tools/container_smoke.py
+git add -- .dockerignore .github/workflows/tests.yml Dockerfile app.py compose.yaml demo_security.py serve.py railway.json RAILWAY_DEPLOYMENT.md DEPLOYMENT.md README.md AUDIT.md tests/test_railway.py tests/test_railway_http.py tests/test_container_smoke.py tools/hash_demo_password.py tools/container_smoke.py
 if ($LASTEXITCODE -ne 0) { throw 'Staging failed.' }
 & .\.venv\Scripts\python.exe -B .\tools\pre_submission_check.py --require-git --rebuild-zip
 if ($LASTEXITCODE -ne 0) { throw 'Release check failed.' }
