@@ -3,6 +3,7 @@
 No HTTP interception, provider fixtures, or simulated API success. Speech remains
 honestly unavailable without credentials; real provider calls are a separate opt-in.
 """
+import json
 import os
 import socket
 import subprocess
@@ -79,6 +80,27 @@ class TestBrowserFlows(unittest.TestCase):
         self.page.locator('#transcript').fill(text)
         self.page.locator('#transcript').press('Control+Enter')
 
+    def assert_no_horizontal_overflow(self, width):
+        page = self.page
+        fits = page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+        details = ''
+        if not fits:
+            details = page.evaluate('''() => ({
+                viewport: innerWidth, documentWidth: document.documentElement.scrollWidth,
+                elements: [...document.querySelectorAll('body *')].flatMap(element => {
+                    const rect = element.getBoundingClientRect();
+                    return rect.width && (rect.right > innerWidth + 1 || rect.left < -1)
+                        ? [{tag: element.tagName, id: element.id, class: String(element.className),
+                            left: rect.left, right: rect.right, width: rect.width}] : [];
+                })
+            })''')
+            output = ROOT / 'test-results'
+            output.mkdir(exist_ok=True)
+            artifact = output / f'{self._testMethodName}-{width}px-overflow'
+            artifact.with_suffix('.json').write_text(json.dumps(details, indent=2), encoding='utf-8')
+            page.screenshot(path=str(artifact.with_suffix('.png')), full_page=True)
+        self.assertTrue(fits, f'Horizontal overflow at {width}px: {details}')
+
     def test_actual_read_summary_draft_and_reminder_flow(self):
         from playwright.sync_api import expect
         page = self.page
@@ -131,7 +153,7 @@ class TestBrowserFlows(unittest.TestCase):
         self.assertEqual(page.locator('#playback').get_attribute('aria-label'), 'Saathi spoken response')
         for width in [320, 390, 768, 1440]:
             page.set_viewport_size({'width': width, 'height': 1000})
-            self.assertTrue(page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), f'Horizontal overflow at {width}px')
+            self.assert_no_horizontal_overflow(width)
         page.reload()
         expect(page.locator('#contrastBtn')).to_have_attribute('aria-pressed', 'true')
         expect(page.locator('#sizeBtn')).to_have_attribute('aria-pressed', 'true')
@@ -143,6 +165,27 @@ class TestBrowserFlows(unittest.TestCase):
         page.screenshot(path=str(output / 'accessible-desktop.png'), full_page=True)
         page.set_viewport_size({'width': 390, 'height': 844})
         page.screenshot(path=str(output / 'accessible-mobile.png'), full_page=True)
+
+    def test_large_text_heading_reflows_with_wide_fallback_font(self):
+        from playwright.sync_api import expect
+        page = self.page
+        page.locator('#sizeBtn').click()
+        page.set_viewport_size({'width': 320, 'height': 1000})
+        # Exercise wider font metrics on every OS, including Windows machines
+        # where the installed Segoe UI font did not expose the CI overflow.
+        # Use the loaded same-origin stylesheet; keep the production CSP intact.
+        page.evaluate('''() => {
+            const sheet = document.styleSheets[0];
+            sheet.insertRule('.hero h1 { font-family: monospace; }', sheet.cssRules.length);
+        }''')
+        expect(page.locator('#heading')).to_have_text('Your voice.Your independence.')
+        expect(page.locator('#heading')).to_be_visible()
+        self.assert_no_horizontal_overflow(320)
+        self.assertTrue(page.locator('#heading').evaluate('''heading => {
+            const range = document.createRange();
+            range.selectNodeContents(heading);
+            return [...range.getClientRects()].every(rect => rect.left >= 0 && rect.right <= innerWidth + 1);
+        }'''), 'Every heading text fragment must remain inside the viewport')
 
 
 if __name__ == '__main__':

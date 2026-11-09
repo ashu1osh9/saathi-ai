@@ -57,6 +57,8 @@ body { -webkit-font-smoothing: antialiased; }
 .chip { line-height: 1.55; text-wrap: balance; }
 .hero { min-height: 360px; padding: 40px 0 36px; }
 h1 { font-size: clamp(2.6rem, 4.8vw, 4.1rem); line-height: 1.12; }
+/* Wide fallback-font words must wrap rather than enlarge the hero's grid track. */
+.hero h1 { overflow-wrap: anywhere; }
 h1, h2, h3 { text-wrap: balance; }
 .lede { max-width: 610px; line-height: 1.75; }
 .hero-cta { margin-top: 22px; }

@@ -1,6 +1,26 @@
 ﻿# Inspection and verification record
 
-Date: 8 November 2026. This record distinguishes source review, executed checks and checks awaiting a working runtime/account.
+Latest update: 9 November 2026. This record distinguishes source review, executed checks and checks awaiting a working runtime/account. Earlier dated results are historical; the latest section supersedes their current-status claims.
+
+## GitHub Actions browser failure — 9 November 2026 (latest)
+
+- **FAILED / REPRODUCED:** run [42501081433](https://github.com/ashu1osh9/saathi-ai/actions/runs/42501081433), commit `8a4f0fa`, job `test`, failed in `test_keyboard_preferences_mobile_and_honest_speech_failure`, originally `tests/test_browser.py:134`: `AssertionError: False is not true : Horizontal overflow at 320px`. The read/summary/draft/confirmation/reminder browser flow passed. This was an actual responsive-layout assertion failure, not a browser installation or provider error.
+- **VERIFIED LOG ACCESS:** GitHub CLI was unavailable and unauthenticated job-log download returned HTTP 403. The exact log was subsequently retrieved read-only using Git's existing noninteractive authentication, held only in memory. Credential values were never displayed or saved. A redacted log and local diagnostics remain ignored under `test-results/ci-diagnosis/`.
+- **VERIFIED ROOT CAUSE:** reproduced the same assertion on Ubuntu 26.04.1 WSL with CI-matching Python **3.12.16**, Playwright **1.64.1** and Chromium **156.0.8078.4 / revision 1248**. At a 320px viewport with large text enabled, the document measured **383px**. The heading's unbreakable word `independence.` under the available Linux font metrics enlarged the hero grid's automatic minimum track size; the hero content measured **370.875px** despite only 296px being available inside page padding. Windows' installed UI font had not exposed this overflow.
+- **FIXED / VERIFIED:** added only `.hero h1 { overflow-wrap: anywhere; }` to production CSS. Testing this rule alone reduced the Linux document width from **383px to 320px**, with the full heading retained. No clipping, hidden overflow, reduced text size, font replacement, backend change or production CSP relaxation was used.
+- **REGRESSION VERIFIED:** added a wide-fallback-font browser case that also reproduces the bug on Windows: **327px** document width at a 320px viewport before the fix. It failed before the CSS change and passed afterward. The test checks that the full heading remains present and visible, every text fragment is inside the viewport, and document width still meets the original one-pixel tolerance. The original responsive assertion is preserved in a shared helper that writes element bounds and a screenshot before failing, making the existing CI artifact upload useful on overflow failures.
+- **VERIFIED TESTS AFTER FIX:** complete Ubuntu Python discovery with `SAATHI_E2E=1` and an empty `GNANI_API_KEY`: **62 discovered, 56 passed, 6 skipped, 0 failures/errors**, in **33.531s**. All **3 Playwright tests** passed within that run. Separately, the exact focused browser command passed **3/3** on Ubuntu and **3/3** on Windows bundled Chromium. Frontend Node 22.17 checks passed **22/22**; production JavaScript syntax checks passed. This is **78 passing tests** across the complete Linux Python run and frontend suite; repeated browser runs are not counted again.
+- **VERIFIED WORKFLOW / DEPENDENCIES:** `.github/workflows/tests.yml` already installs `requirements-e2e.txt`, validates dependencies and installs Chromium with system libraries before enabling browser tests. No workflow or dependency changes were needed. Windows `pip check` passed; the isolated Linux environment's equivalent `uv pip check` validated **24 compatible packages** (uv-created environments do not include pip by default). The original remote run also passed `pip check`, all non-browser checks and the **Docker image build**. Its action-runtime deprecation warnings were not the cause of this failure and were not suppressed.
+- **NOT TESTED IN THIS FIX:** six billed real-Gnani tests remain intentionally opt-in (one live roundtrip plus five voice-browser tests). Existing Prisma/Timbre implementation, voice controls and backend code were not modified. Earlier live-service evidence remains recorded below; this CSS fix does not claim a fresh paid provider run or physical-device/screen-reader certification.
+- **PENDING OWNER PUSH:** no commit, push, workflow rerun, deployment or submission was performed. The next GitHub Actions run must confirm the fix on GitHub after the owner commits/pushes it. Local source changes make the previous submission ZIP stale; after staging the reviewed fix, run `python tools/pre_submission_check.py --require-git --rebuild-zip` before distributing another ZIP.
+
+Reproduction commands (Linux, after installing `requirements-e2e.txt` and `python -m playwright install --with-deps chromium`):
+
+```bash
+SAATHI_E2E=1 GNANI_API_KEY='' python -m unittest discover -s tests -p test_browser.py -v
+SAATHI_E2E=1 GNANI_API_KEY='' python -m unittest discover -s tests -v
+node --test tests/frontend.test.cjs
+```
 
 ## Final pre-submission inspection — latest check
 
